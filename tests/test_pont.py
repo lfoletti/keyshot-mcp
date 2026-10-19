@@ -966,5 +966,31 @@ class TestVraieMinuterie(unittest.TestCase):
         self.assertEqual(pont.id_timer, 0)
 
 
+class TestVersions(unittest.TestCase):
+    """Une seule version pour le pont, le script d'arrêt et le serveur (CONTRIBUTING, Versions)."""
+
+    def test_versions_identiques(self):
+        import re
+        racine = os.path.join(ICI, "..")
+
+        def chercher(chemin, motif):
+            with open(os.path.join(racine, *chemin.split("/")), encoding="utf-8") as f:
+                m = re.search(motif, f.read(), re.M)
+            self.assertIsNotNone(m, chemin)
+            return m.group(1)
+
+        versions = {
+            "BRIDGE_VERSION": chercher("addin/Scripts/MCP start.py", r'^BRIDGE_VERSION = "([^"]+)"'),
+            "# VERSION (start)": chercher("addin/Scripts/MCP start.py", r"^# VERSION (\S+)"),
+            "# VERSION (stop)": chercher("addin/Scripts/MCP stop.py", r"^# VERSION (\S+)"),
+            "__version__": chercher("server/keyshotmcp/__init__.py", r'^__version__ = "([^"]+)"'),
+            "VERSION_PONT_ATTENDUE": chercher("server/keyshotmcp/server.py", r'^VERSION_PONT_ATTENDUE = "([^"]+)"'),
+        }
+        self.assertEqual(len(set(versions.values())), 1, versions)
+        self.assertRegex(versions["BRIDGE_VERSION"], r"^\d+\.\d+\.\d+$")
+        with open(os.path.join(racine, "CHANGELOG.md"), encoding="utf-8") as f:
+            self.assertIn("## [%s]" % versions["BRIDGE_VERSION"], f.read())
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=1)

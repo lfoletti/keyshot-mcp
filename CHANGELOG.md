@@ -2,9 +2,14 @@
 
 All important changes to this project are in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
-The versions are the bridge versions (`BRIDGE_VERSION`).
+The project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+The bridge, the stop script and the MCP server have the same version.
 
 ## [Unreleased]
+
+## [1.0.0] - 2026-10-19
+
+First stable version. The bridge, the stop script and the MCP server now have the same version.
 
 ### Added
 
@@ -60,6 +65,7 @@ First public version.
 - The tools edit a material graph only on copies that the bridge made.
 - `save_scene` keeps a copy of the old `.bip` file.
 
-[Unreleased]: https://github.com/lfoletti/keyshot-mcp/compare/bb801b8...HEAD
+[Unreleased]: https://github.com/lfoletti/keyshot-mcp/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/lfoletti/keyshot-mcp/releases/tag/v1.0.0
 [0.3.1]: https://github.com/lfoletti/keyshot-mcp/commit/bb801b8
 [0.3.0]: https://github.com/lfoletti/keyshot-mcp/commit/2a654b0
