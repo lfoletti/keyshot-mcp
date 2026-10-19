@@ -15,6 +15,18 @@ libs = os.path.join(here, "libs")
 
 sys.path[:0] = [os.path.join(here, "server"), libs]
 
+# mcp importe pywin32 sous Windows. Avec -S, pywin32.pth n'est pas lu : on ajoute ses
+# dossiers à la main, seulement si ce Python ne fournit pas déjà pywintypes.
+if sys.platform == "win32":
+    try:
+        import pywintypes  # noqa: F401
+    except ImportError:
+        sys.path[2:2] = [os.path.join(libs, "win32"), os.path.join(libs, "win32", "lib"),
+                         os.path.join(libs, "pythonwin")]
+        dlls = os.path.join(libs, "pywin32_system32")
+        if os.path.isdir(dlls):
+            os.add_dll_directory(dlls)
+
 from keyshotmcp.server import main  # noqa: E402
 
 if __name__ == "__main__":

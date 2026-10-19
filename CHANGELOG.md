@@ -11,6 +11,10 @@ The versions are the bridge versions (`BRIDGE_VERSION`).
 - GitHub Actions: the tests run on Windows for each pull request and each push to `main`.
 - GitHub Actions: Claude reviews each pull request and writes comments.
 
+### Fixed
+
+- `run.py` finds pywin32 in `libs` when Python starts with `-S`.
+
 ## [0.3.1] - 2026-10-19
 
 ### Changed
