@@ -65,6 +65,7 @@ Some changes need a real KeyShot, for example a new `lux` call. Do these steps:
 - Do not commit output files: renders, screenshots, `.bip` scenes or logs.
 - Do not commit `pont-actif.json`. It contains the token.
 - Update `README.md` if you add, remove or change a tool or a setting.
+- Add your change to the `[Unreleased]` section of `CHANGELOG.md`.
 
 ## Report a problem
 
