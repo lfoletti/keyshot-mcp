@@ -1,5 +1,5 @@
 """Outils de matériaux : lecture, application pièce par pièce, réglages, graphe, annulation."""
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 
 from keyshotmcp.server import mcp
 from keyshotmcp.tools._commun import LECTURE, MODIFIE, appeler, en_texte
@@ -110,3 +110,18 @@ def remove_material_node(material: str, node_id: int) -> str:
 def rename_material(material: str, new_name: str) -> str:
     """Renomme une copie créée par le pont."""
     return en_texte(appeler("rename_material", {"material": material, "new_name": new_name}))
+
+
+@mcp.tool(annotations=MODIFIE)
+def save_material_to_library(material: str, folder: str = "keyshot-mcp", cmf: Optional[Dict[str, str]] = None,
+                             overwrite: bool = False) -> str:
+    """Enregistre une copie créée par le pont dans la bibliothèque de matériaux de KeyShot,
+    sous Materials/<folder>/ (sous-dossier relatif, sans « .. »), pour la réutiliser dans
+    d'autres scènes. cmf : champs CMF de KeyShot, p. ex. {"Name": "CMF-01", "Color": "RAL 7016",
+    "Finish": "Microbillé", "Material": "Aluminium anodisé", "Vendor": "...", "Notes": "..."} ;
+    la réponse les rend tels que KeyShot les a gardés. Nommer d'abord la copie
+    (rename_material) : le nom devient celui du matériau en bibliothèque. Refusé si le
+    matériau existe déjà dans ce dossier, sauf overwrite=true (seulement avec l'accord de
+    l'utilisateur)."""
+    return en_texte(appeler("save_material_to_library", {"material": material, "folder": folder,
+                                                          "cmf": cmf, "overwrite": overwrite}))

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # AUTHOR atelier oï
-# VERSION 0.3.4
+# VERSION 0.3.5
 # Bridge between Claude (keyshot MCP server) and this KeyShot window. Run once per session; MCP stop stops it.
 """Pont KeyShot pour le serveur MCP `keyshotmcp` (mode `timer`, B0).
 
@@ -48,7 +48,7 @@ try:
 except ImportError:
     lux = None
 
-BRIDGE_VERSION = "0.3.4"
+BRIDGE_VERSION = "0.3.5"
 NOM_MODULE = "keyshot_mcp_bridge"
 HOTE = "127.0.0.1"
 PORT = int(os.environ.get("KEYSHOT_MCP_PORT", "1998"))
@@ -189,6 +189,7 @@ class Pont:
             "remove_material_node": self.c_remove_material_node,
             "list_objects": self.c_list_objects,
             "set_visibility": self.c_set_visibility,
+            "save_material_to_library": self.c_save_material_to_library,
             "get_scene_tree": self.c_get_scene_tree,
             "assign_material": self.c_assign_material,
             "list_library_materials": self.c_list_library_materials,
@@ -1061,6 +1062,62 @@ class Pont:
         self.copies.discard(material)
         self.copies.add(new_name)
         return {"material": new_name, "before": material}
+
+    CHAMPS_CMF = ("Name", "Color", "Finish", "Material", "Vendor", "Notes")
+
+    def _dossier_bibliotheque(self, folder):
+        """Sous-dossier relatif de la bibliothèque de matériaux, sans remontée ni lecteur."""
+        if not isinstance(folder, str) or not folder.strip():
+            raise ErreurCommande("parametres", "folder : sous-dossier de la bibliothèque, p. ex. « keyshot-mcp »")
+        relatif = folder.strip().replace("\\", "/").strip("/")
+        if os.path.isabs(relatif) or ":" in relatif or any(p in ("", ".", "..") for p in relatif.split("/")):
+            raise ErreurCommande("parametres", "folder : chemin relatif simple attendu, sans « .. » : %r" % (folder,))
+        return relatif
+
+    def c_save_material_to_library(self, material, folder="keyshot-mcp", cmf=None, overwrite=False):
+        """Enregistre une copie créée par le pont dans la bibliothèque de matériaux, sous
+        Materials/<folder>/, puis remplit ses champs CMF (Name, Color, Finish, Material, Vendor,
+        Notes). Refusé si un matériau du même nom existe déjà dans ce dossier, sauf overwrite."""
+        lx = self._lux()
+        self._graphe_editable(material)  # seulement nos copies, présentes dans la scène
+        relatif = self._dossier_bibliotheque(folder)
+        if cmf is not None and (not isinstance(cmf, dict)
+                                or not all(isinstance(k, str) and isinstance(v, str) for k, v in cmf.items())):
+            raise ErreurCommande("parametres", "cmf : {champ: texte}, champs %s" % ", ".join(self.CHAMPS_CMF))
+        racine = lx.getKeyShotFolder(lx.FOLDER_MATERIALS)
+        fichier = os.path.join(racine, *relatif.split("/"), material + ".mtl")
+        # KeyShot 2026.2 ignore `folder` : saveMaterial écrit toujours à la racine de la
+        # bibliothèque (constaté le 19.10.2026). On y enregistre, puis on déplace le fichier.
+        a_la_racine = os.path.join(racine, material + ".mtl")
+        if os.path.exists(a_la_racine):
+            raise ErreurCommande("existe", "un matériau %r est déjà à la racine de la bibliothèque : il serait "
+                                 "écrasé ; le renommer d'abord (rename_material)" % (material,))
+        if os.path.exists(fichier) and not overwrite:
+            raise ErreurCommande("existe", "la bibliothèque contient déjà %s : overwrite=true pour le remplacer"
+                                 % fichier)
+        if lx.saveMaterial(material) is False:
+            raise ErreurCommande("enregistrement", "saveMaterial a renvoyé False")
+        if not os.path.exists(a_la_racine):
+            raise ErreurCommande("enregistrement", "saveMaterial n'a pas écrit %s" % a_la_racine)
+        champs = {}
+        if cmf:
+            md = lx.findMaterialMetadata(material)
+            if md is None:
+                raise ErreurCommande("metadonnees", "matériau enregistré, mais ses métadonnées CMF sont introuvables")
+            existants = set(md.getFieldNames() or [])
+            for nom, valeur in cmf.items():
+                if nom in existants:
+                    md.updateField(nom, valeur)
+                else:
+                    md.createField(nom, valeur)
+                champs[nom] = valeur
+            lx.saveMaterialMetadata(md)
+            # Relecture : ce que KeyShot a réellement gardé.
+            relu = lx.findMaterialMetadata(material)
+            champs = {nom: self._lire(lambda nom=nom: relu.readField(nom)) for nom in cmf}
+        os.makedirs(os.path.dirname(fichier), exist_ok=True)
+        os.replace(a_la_racine, fichier)
+        return {"material": material, "library_folder": "Materials/" + relatif, "file": fichier, "cmf": champs}
 
     def c_save_scene(self, path=None, backup=True):
         """Enregistre la scène, par défaut sur son fichier actuel. Jamais sans chemin connu :

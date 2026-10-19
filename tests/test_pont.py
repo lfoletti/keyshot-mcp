@@ -477,6 +477,47 @@ class TestOutils(unittest.TestCase):
         finally:
             shutil.rmtree(ailleurs, ignore_errors=True)
 
+    def test_enregistrer_en_bibliotheque(self):
+        copie = self._copie_metal()
+        biblio = tempfile.mkdtemp(prefix="materiaux-")
+        try:
+            self.b.lux.dossier_materiaux = biblio
+            cmf = {"Name": "CMF-01", "Finish": "Microbillé"}
+            r = self.b.appeler("save_material_to_library", {"material": copie, "folder": "keyshot-mcp-essais",
+                                                            "cmf": cmf})["result"]
+            attendu = os.path.join(biblio, "keyshot-mcp-essais", copie + ".mtl")
+            self.assertEqual(r["file"], attendu)
+            self.assertTrue(os.path.exists(attendu))
+            self.assertFalse(os.path.exists(os.path.join(biblio, copie + ".mtl")))  # déplacé
+            self.assertEqual(r["cmf"], cmf)  # relu depuis KeyShot
+            r = self.b.appeler("save_material_to_library", {"material": copie, "folder": "keyshot-mcp-essais"})
+            self.assertEqual(r["code"], "existe")
+            r = self.b.appeler("save_material_to_library", {"material": copie, "folder": "keyshot-mcp-essais",
+                                                            "overwrite": True})
+            self.assertEqual(r["status"], "success")
+        finally:
+            shutil.rmtree(biblio, ignore_errors=True)
+
+    def test_enregistrer_refuse(self):
+        biblio = tempfile.mkdtemp(prefix="materiaux-")
+        try:
+            self.b.lux.dossier_materiaux = biblio
+            # Un original de la scène, pas une copie du pont.
+            r = self.b.appeler("save_material_to_library", {"material": "Aluminium"})
+            self.assertEqual(r["code"], "original_protege")
+            copie = self._copie_metal()
+            for dossier in ("../dehors", "C:/Windows", "", "a//b"):
+                r = self.b.appeler("save_material_to_library", {"material": copie, "folder": dossier})
+                self.assertEqual(r["code"], "parametres", dossier)
+            r = self.b.appeler("save_material_to_library", {"material": copie, "cmf": {"Name": 3}})
+            self.assertEqual(r["code"], "parametres")
+            # Un matériau du même nom déjà à la racine serait écrasé par saveMaterial.
+            open(os.path.join(biblio, copie + ".mtl"), "wb").close()
+            r = self.b.appeler("save_material_to_library", {"material": copie})
+            self.assertEqual(r["code"], "existe")
+        finally:
+            shutil.rmtree(biblio, ignore_errors=True)
+
     def test_couleur_alpha_garde_l_alpha(self):
         r = self.b.appeler("set_material_parameter",
                            {"material": "Aluminium", "parameter": "base", "value": [0.5, 0.4, 0.1]})["result"]

@@ -244,6 +244,27 @@ class SceneNode:
         self.materiau = mat
 
 
+class FausseMetadata:
+    def __init__(self, nom, champs):
+        self.nom, self.champs = nom, champs
+
+    def getFieldNames(self):
+        return list(self.champs)
+
+    def createField(self, nom, valeur, type=0):
+        if nom in self.champs:
+            raise ValueError("champ existant : %r" % nom)
+        self.champs[nom] = valeur
+
+    def updateField(self, nom, valeur):
+        if nom not in self.champs:
+            raise ValueError("champ inconnu : %r" % nom)
+        self.champs[nom] = valeur
+
+    def readField(self, nom):
+        return self.champs[nom]
+
+
 class Env:
     def __init__(self, nom):
         self.nom = nom
@@ -269,6 +290,7 @@ class FauxLux:
     PARAMETER_TYPE_DOUBLE = PARAMETER_TYPE_DOUBLE
     PARAMETER_TYPE_STRING = PARAMETER_TYPE_STRING
     FOLDER_TEXTURES = 4
+    FOLDER_MATERIALS = 5
 
     def __init__(self):
         self.cameras = ["last_active", "Vue 1"]
@@ -302,7 +324,9 @@ class FauxLux:
         }
         self.vue_non_enregistree = False
         self.distance = 50.0
-        self.sans_find = False  # True : comme une version de KeyShot sans SceneNode.find
+        self.sans_find = False
+        self.dossier_materiaux = None
+        self.metadonnees = {"Plastique blanc": {"Name": "", "Notes": ""}}  # True : comme une version de KeyShot sans SceneNode.find
         o = lambda i, nom, mat: SceneNode(self, i, nom, materiau=mat)
         self.arbre = SceneNode(self, 0, "root", [
             SceneNode(self, 1, "Bouteille", [o(10, "Corps", "Plastique blanc"), o(11, "Bouchon", "Aluminium"),
@@ -411,6 +435,21 @@ class FauxLux:
         return [m for m in ("Materials/Paint/Metallic/Paint Metallic Gold #1",
                             "Materials/Glass/Glass Clear") if m.startswith(filtre)]
 
+    def saveMaterial(self, name, folder=None):
+        """Comme KeyShot 2026.2 : `folder` est ignoré, le fichier va à la racine."""
+        self._note("saveMaterial", name, folder)
+        with open(os.path.join(self.dossier_materiaux, name + ".mtl"), "wb") as f:
+            f.write(b"//--lux:mat:001--")
+        self.metadonnees.setdefault(name, {})
+
+    def findMaterialMetadata(self, name):
+        if name not in self.metadonnees:
+            return None
+        return FausseMetadata(name, dict(self.metadonnees[name]))
+
+    def saveMaterialMetadata(self, md):
+        self.metadonnees[md.nom] = dict(md.champs)
+
     def getMaterialGraph(self, nom):
         return self.graphes[nom]
 
@@ -447,4 +486,6 @@ class FauxLux:
     def getKeyShotFolder(self, quoi):
         if quoi == self.FOLDER_TEXTURES and getattr(self, "dossier_textures", None):
             return self.dossier_textures
+        if quoi == self.FOLDER_MATERIALS and getattr(self, "dossier_materiaux", None):
+            return self.dossier_materiaux
         return os.getcwd()
