@@ -3,6 +3,9 @@
 Control an open KeyShot Studio 2026 window from Claude Code with the Model Context Protocol (MCP).
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Status: prototype](https://img.shields.io/badge/status-prototype-orange.svg)](#status)
+
+> **Status: prototype.** The tools work and have tests, but the project depends on the scripting API of KeyShot, which can change. Tell us what you use and what fails: open an issue or a discussion.
 
 ```
 Claude Code ⇄ MCP server keyshotmcp (Python 3.12, stdio)
@@ -120,6 +123,14 @@ py -3.13 test_serveur_mcp.py
 ## Contribute
 
 Read [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Status
+
+keyshot-mcp is a working prototype. It is tested with KeyShot Studio 2026.2 Pro on Windows.
+
+- The bridge uses the KeyShot scripting API (`lux`). A new KeyShot version can change this API.
+- KeyShot can add its own integration with Claude in a future version. This project can then stop.
+- Feedback has priority over new features. Use the issue templates *Bug* and *Feedback*.
 
 ## Disclaimer
 

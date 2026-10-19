@@ -7,6 +7,11 @@ The bridge, the stop script and the MCP server have the same version.
 
 ## [Unreleased]
 
+### Added
+
+- README: status "prototype" (badge, note at the top, section *Status*).
+- Issue templates *Bug* and *Feedback*. Questions go to the Discussions, security problems to a private report.
+
 ## [1.0.0] - 2026-10-19
 
 First stable version. The bridge, the stop script and the MCP server now have the same version.

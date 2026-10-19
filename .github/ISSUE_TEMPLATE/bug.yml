@@ -1,0 +1,48 @@
+name: Bug
+description: A tool or the bridge does not work as the README says.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not paste `pont-actif.json` or a token. Remove the token from log lines before you paste them.
+        For a security problem, do not open an issue. Read SECURITY.md.
+  - type: input
+    id: keyshot
+    attributes:
+      label: KeyShot version
+      description: In KeyShot, open Help > About.
+      placeholder: "KeyShot Studio 2026.2 Pro (15.1.2.7)"
+    validations:
+      required: true
+  - type: input
+    id: bridge
+    attributes:
+      label: Bridge version
+      description: The tool `keyshot_status` shows it (field `version`).
+      placeholder: "1.0.0"
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps
+      description: The request to Claude or the tool calls, in order.
+      placeholder: |
+        1. Open a scene with one part.
+        2. Ask Claude: "Apply brushed aluminium to the part".
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected result
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual result
+      description: The error message, and the applicable lines from `pont.log` in `%LOCALAPPDATA%\keyshot-mcp`.
+    validations:
+      required: true
