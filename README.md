@@ -7,7 +7,7 @@ Control an open KeyShot Studio 2026 window from Claude Code with the Model Conte
 ```
 Claude Code ⇄ MCP server keyshotmcp (Python 3.12, stdio)
             ⇄ TCP 127.0.0.1:1998, 4-byte length + JSON, token
-            ⇄ keyshot_mcp_bridge.py (in KeyShot, timer on the UI thread)
+            ⇄ MCP start.py (in KeyShot, timer on the UI thread)
 ```
 
 The bridge runs inside KeyShot. The server runs in Claude Code. They speak only on the local computer.
@@ -31,7 +31,7 @@ The bridge runs inside KeyShot. The server runs in Claude Code. They speak only 
    ```
    py -3.12 -m pip install --target libs mcp==1.28.1
    ```
-3. Copy `addin\Scripts\keyshot_mcp_bridge.py` and `keyshot_mcp_stop.py` to
+3. Copy `addin\Scripts\MCP start.py` and `MCP stop.py` to
    `C:\Users\Public\Documents\KeyShot Studio\Scripts\`.
 4. Restart KeyShot. KeyShot reads the Scripts folder only when it starts.
 5. Add the server to Claude Code:
@@ -47,13 +47,13 @@ The bridge runs inside KeyShot. The server runs in Claude Code. They speak only 
 ## Use
 
 1. In KeyShot, open *Window > Scripting Console > Scripts*.
-2. Select `keyshot_mcp_bridge`, then click *Run*. The console shows `Pont KeyShot actif sur 127.0.0.1:1998`.
+2. Select `MCP start`, then click *Run*. The console shows `Pont KeyShot actif sur 127.0.0.1:1998`.
 3. In Claude Code, type `/mcp`. Make sure that `keyshot` is connected.
 4. Ask Claude, for example:
    - "Show me the scene and list the materials."
    - "Apply brushed aluminium to the cap, then make a 1920 × 1080 render."
 
-To stop the bridge, run the script `keyshot_mcp_stop`, or close KeyShot.
+To stop the bridge, run the script `MCP stop`, or close KeyShot.
 To update the bridge, copy the new file, then use the tool `reload_bridge`.
 
 ## Tools

@@ -1,4 +1,4 @@
-"""KeyShot Studio par le Model Context Protocol, à travers le pont keyshot_mcp_bridge.py."""
+"""KeyShot Studio par le Model Context Protocol, à travers le pont MCP start.py."""
 
 import importlib
 import pkgutil

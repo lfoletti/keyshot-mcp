@@ -19,7 +19,7 @@ from faux_lux import FauxLux
 
 ICI = os.path.dirname(os.path.abspath(__file__))
 SCRIPTS = os.path.join(ICI, "..", "addin", "Scripts")
-PONT_PY = os.path.join(SCRIPTS, "keyshot_mcp_bridge.py")
+PONT_PY = os.path.join(SCRIPTS, "MCP start.py")
 
 
 def run_keyshot(chemin):
@@ -53,8 +53,8 @@ def main():
             user32.DispatchMessageW(ctypes.byref(msg))
         time.sleep(0.005)
     print("client :", resultats)
-    run_keyshot(os.path.join(SCRIPTS, "keyshot_mcp_stop.py"))
-    run_keyshot(os.path.join(SCRIPTS, "keyshot_mcp_stop.py"))
+    run_keyshot(os.path.join(SCRIPTS, "MCP stop.py"))
+    run_keyshot(os.path.join(SCRIPTS, "MCP stop.py"))
     print("fiche restante :", os.path.exists(client_pont.chemin_fiche()))
     return 0 if len(resultats) == 2 and resultats[1] == "last_active" else 1
 

@@ -46,7 +46,7 @@ Some changes need a real KeyShot, for example a new `lux` call. Do these steps:
 - Use only the Python standard library and `lux`. KeyShot does not have other packages.
 - The bridge runs on the KeyShot UI thread. Keep each command short. Do not block the thread.
 - Do not open the port to other computers. Keep `127.0.0.1` and the token.
-- If you change the bridge, increase `BRIDGE_VERSION` and the `# VERSION` line in `keyshot_mcp_bridge.py`.
+- If you change the bridge, increase `BRIDGE_VERSION` and the `# VERSION` line in `MCP start.py`.
 - Set `VERSION_PONT_ATTENDUE` in `server/keyshotmcp/server.py` to the same value.
 
 ## Rules for the server

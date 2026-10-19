@@ -1,6 +1,6 @@
 """Serveur MCP keyshot : connexion au pont KeyShot et serveur FastMCP.
 
-Le pont (addin/Scripts/keyshot_mcp_bridge.py, lancé dans KeyShot) écoute sur 127.0.0.1 et
+Le pont (addin/Scripts/MCP start.py, lancé dans KeyShot) écoute sur 127.0.0.1 et
 écrit son port, son jeton et le pid de KeyShot dans %LOCALAPPDATA%\\keyshot-mcp\\pont-actif.json.
 Protocole de rhinomcp : trame = 4 octets big-endian + JSON UTF-8 ; requête
 {"type", "params", "token"}, réponse {"status": "success", "result"} ou
@@ -28,11 +28,11 @@ logger = logging.getLogger("keyshotmcp")
 TAILLE_ENTETE = 4
 TRAME_MAX = 64 * 1024 * 1024
 DELAI_S = float(os.environ.get("KEYSHOT_MCP_TIMEOUT", "60"))
-VERSION_PONT_ATTENDUE = "0.3.0"
+VERSION_PONT_ATTENDUE = "0.3.1"
 
 MSG_LANCER = ("Pont KeyShot introuvable. Ouvrez KeyShot, puis Window > Scripting Console > Scripts > "
-              "keyshot_mcp_bridge > Run (ou, dans l'onglet Console : exec(open(r\"C:\\Users\\Public\\"
-              "Documents\\KeyShot Studio\\Scripts\\keyshot_mcp_bridge.py\", encoding=\"utf-8\").read(), "
+              "MCP start > Run (ou, dans l'onglet Console : exec(open(r\"C:\\Users\\Public\\"
+              "Documents\\KeyShot Studio\\Scripts\\MCP start.py\", encoding=\"utf-8\").read(), "
               "{\"__name__\": \"__main__\"}))")
 
 

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-# AUTHOR Lauro Foletti
+# AUTHOR atelier oï
 # VERSION 0.1.0
-# Stops the Claude bridge (keyshot_mcp_bridge): timer off, port closed, token removed.
+# Stops the Claude bridge (MCP start): timer off, port closed, token removed.
 """Arrêt du pont KeyShot (« STOP CLAUDE »). Sans effet si aucun pont ne tourne."""
 import sys
 

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# AUTHOR Lauro Foletti
+# AUTHOR atelier oï
 # VERSION 0.1.0
 # keyshot-mcp probe, four successive Runs: timer, threads, render, persistence. Results in %LOCALAPPDATA%\keyshot-mcp\spike\.
 """Sonde KeyShot : étape 0 du spike keyshot-mcp.

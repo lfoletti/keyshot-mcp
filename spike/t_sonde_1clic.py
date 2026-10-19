@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# AUTHOR Lauro Foletti
+# AUTHOR atelier oï
 # VERSION 0.1.0
 # keyshot-mcp probe, single Run, about 2 min: timer, threads, render, lux. Results in %LOCALAPPDATA%\keyshot-mcp\spike\.
 """Sonde KeyShot en un seul clic : étape 0 du spike keyshot-mcp.

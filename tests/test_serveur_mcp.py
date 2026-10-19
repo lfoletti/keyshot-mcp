@@ -28,7 +28,7 @@ PYTHON_SERVEUR = os.environ.get("KEYSHOT_MCP_PYTHON") or sys.executable
 
 def charger_pont():
     spec = importlib.util.spec_from_file_location(
-        "keyshot_mcp_bridge", os.path.join(PROJET, "addin", "Scripts", "keyshot_mcp_bridge.py"))
+        "keyshot_mcp_bridge", os.path.join(PROJET, "addin", "Scripts", "MCP start.py"))
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module

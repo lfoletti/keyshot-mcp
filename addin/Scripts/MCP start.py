@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-# AUTHOR Lauro Foletti
-# VERSION 0.3.0
-# Bridge between Claude (keyshot MCP server) and this KeyShot window. Run once per session; keyshot_mcp_stop stops it.
+# AUTHOR atelier oï
+# VERSION 0.3.1
+# Bridge between Claude (keyshot MCP server) and this KeyShot window. Run once per session; MCP stop stops it.
 """Pont KeyShot pour le serveur MCP `keyshotmcp` (mode `timer`, B0).
 
 Un Run dans l'onglet Scripts arme une minuterie Windows (SetTimer) sur le
@@ -48,7 +48,7 @@ try:
 except ImportError:
     lux = None
 
-BRIDGE_VERSION = "0.3.0"
+BRIDGE_VERSION = "0.3.1"
 NOM_MODULE = "keyshot_mcp_bridge"
 HOTE = "127.0.0.1"
 PORT = int(os.environ.get("KEYSHOT_MCP_PORT", "1998"))
@@ -280,7 +280,7 @@ class Pont:
                 fiche = json.load(f)
             if fiche.get("pid") == os.getpid() and fiche.get("port") == self.port_demande:
                 return ("le port %d est déjà tenu par un pont de ce KeyShot (version %s). Lancez "
-                        "keyshot_mcp_stop ; s'il ne trouve rien, relancez KeyShot."
+                        "MCP stop ; s'il ne trouve rien, relancez KeyShot."
                         % (self.port_demande, fiche.get("version")))
         except (OSError, ValueError, AttributeError):
             pass
@@ -1326,7 +1326,7 @@ def _chemin_source():
     if chemin and os.path.exists(chemin):
         return chemin
     try:
-        chemin = os.path.join(lux.getKeyShotFolder(lux.FOLDER_SCRIPTS), "keyshot_mcp_bridge.py")
+        chemin = os.path.join(lux.getKeyShotFolder(lux.FOLDER_SCRIPTS), "MCP start.py")
         return chemin if os.path.exists(chemin) else None
     except Exception:
         return None

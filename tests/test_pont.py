@@ -25,7 +25,7 @@ import client_pont
 from faux_lux import FauxLux
 
 ICI = os.path.dirname(os.path.abspath(__file__))
-CHEMIN_PONT = os.path.join(ICI, "..", "addin", "Scripts", "keyshot_mcp_bridge.py")
+CHEMIN_PONT = os.path.join(ICI, "..", "addin", "Scripts", "MCP start.py")
 
 
 def charger_pont():
