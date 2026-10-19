@@ -461,7 +461,7 @@ class TestOutils(unittest.TestCase):
                 f.write(b"\x89PNG")
             r = self.b.appeler("set_material_parameter", {"material": copie, "node_id": 207,
                                                           "parameter": "texture", "value": image})
-            self.assertEqual(r["result"]["after"], image)
+            self.assertEqual(r["result"]["after"], os.path.realpath(image))
         finally:
             shutil.rmtree(dossier, ignore_errors=True)
 
@@ -501,6 +501,28 @@ class TestOutils(unittest.TestCase):
             r = self.b.appeler("save_material_to_library", {"material": copie, "folder": "keyshot-mcp-essais",
                                                             "overwrite": True})
             self.assertEqual(r["status"], "success")
+        finally:
+            shutil.rmtree(biblio, ignore_errors=True)
+
+    def test_parametre_texte_ordinaire_pas_controle(self):
+        # Seul le paramètre « texture » est contrôlé comme un chemin.
+        copie = self._copie_metal()
+        r = self.b.appeler("set_material_parameter", {"material": copie, "parameter": "label",
+                                                      "value": "Réf. A/B : 12"})
+        self.assertEqual(r["status"], "success")
+
+    def test_pas_de_fichier_orphelin_si_cmf_echoue(self):
+        copie = self._copie_metal()
+        biblio = tempfile.mkdtemp(prefix="materiaux-")
+        try:
+            self.b.lux.dossier_materiaux = biblio
+            self.b.lux.cmf_en_panne = True
+            r = self.b.appeler("save_material_to_library", {"material": copie, "cmf": {"Name": "X"}})
+            self.assertEqual(r["code"], "metadonnees")
+            self.assertEqual(os.listdir(biblio), [])  # rien à la racine
+            self.b.lux.cmf_en_panne = False
+            r = self.b.appeler("save_material_to_library", {"material": copie, "cmf": {"Name": "X"}})
+            self.assertEqual(r["status"], "success")  # le nouvel essai n'est pas bloqué
         finally:
             shutil.rmtree(biblio, ignore_errors=True)
 
@@ -702,6 +724,8 @@ class TestOutils(unittest.TestCase):
         self.assertFalse(objets[10]["hidden"])
         self.assertEqual(self.b.appeler("set_visibility", {"object_ids": [999], "visible": False})["code"],
                          "introuvable")
+        self.assertEqual(self.b.appeler("set_visibility", {"object_ids": [10], "visible": "false"})["code"],
+                         "parametres")
 
     def test_lux_functions(self):
         r = self.b.appeler("lux_functions", {"query": "camera"})["result"]

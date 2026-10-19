@@ -113,7 +113,7 @@ py -3.13 test_pont.py
 py -3.13 test_serveur_mcp.py
 ```
 
-`test_pont.py` has 82 tests for the bridge. `test_serveur_mcp.py` has 9 end-to-end tests. The `essai_*.py` files need an open KeyShot.
+`test_pont.py` has 84 tests for the bridge. `test_serveur_mcp.py` has 9 end-to-end tests. The `essai_*.py` files need an open KeyShot.
 
 `test_serveur_mcp.py` starts the server with the Python that runs the test. If the packages in `libs` are for a different Python version, set `KEYSHOT_MCP_PYTHON` to the applicable `python.exe`.
 

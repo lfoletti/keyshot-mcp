@@ -309,7 +309,8 @@ class FauxLux:
                 ShaderParameter("surface", "Surface", PARAMETER_TYPE_SHADERSURFACE, None)]),
             ShaderNode(6, "", {"name": "lux_metal"}, [
                 ShaderParameter("color", "Couleur", PARAMETER_TYPE_COLORALPHA, (1.0, 1.0, 1.0, 1.0)),
-                ShaderParameter("roughness", "Rugosité", PARAMETER_TYPE_DOUBLE, 0.0)]),
+                ShaderParameter("roughness", "Rugosité", PARAMETER_TYPE_DOUBLE, 0.0),
+                ShaderParameter("label", "Libellé", PARAMETER_TYPE_STRING, "")]),
             ShaderNode(7, "", {"name": "__texture"}, [
                 ShaderParameter("texture", "Texture", PARAMETER_TYPE_STRING, "")])])
         metal.aretes.append(ShaderEdge(900, metal.noeuds[1], metal.noeuds[0], "surface"))
@@ -326,6 +327,7 @@ class FauxLux:
         self.distance = 50.0
         self.sans_find = False
         self.dossier_materiaux = None
+        self.cmf_en_panne = False
         self.metadonnees = {"Plastique blanc": {"Name": "", "Notes": ""}}  # True : comme une version de KeyShot sans SceneNode.find
         o = lambda i, nom, mat: SceneNode(self, i, nom, materiau=mat)
         self.arbre = SceneNode(self, 0, "root", [
@@ -443,7 +445,7 @@ class FauxLux:
         self.metadonnees.setdefault(name, {})
 
     def findMaterialMetadata(self, name):
-        if name not in self.metadonnees:
+        if self.cmf_en_panne or name not in self.metadonnees:
             return None
         return FausseMetadata(name, dict(self.metadonnees[name]))
 

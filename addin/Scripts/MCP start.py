@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # AUTHOR atelier oï
-# VERSION 0.3.6
+# VERSION 0.3.7
 # Bridge between Claude (keyshot MCP server) and this KeyShot window. Run once per session; MCP stop stops it.
 """Pont KeyShot pour le serveur MCP `keyshotmcp` (mode `timer`, B0).
 
@@ -48,7 +48,7 @@ try:
 except ImportError:
     lux = None
 
-BRIDGE_VERSION = "0.3.6"
+BRIDGE_VERSION = "0.3.7"
 NOM_MODULE = "keyshot_mcp_bridge"
 HOTE = "127.0.0.1"
 PORT = int(os.environ.get("KEYSHOT_MCP_PORT", "1998"))
@@ -909,6 +909,8 @@ class Pont:
         """Montre (visible=true) ou masque des pièces. Rend l'état d'avant pour chacune."""
         if not isinstance(object_ids, list) or not object_ids:
             raise ErreurCommande("parametres", "object_ids : liste d'identifiants d'objets")
+        if not isinstance(visible, bool):
+            raise ErreurCommande("parametres", "visible : true ou false")
         objets = self._objets()
         inconnus = [i for i in object_ids if i not in objets]
         if inconnus:
@@ -1104,7 +1106,11 @@ class Pont:
         a_la_racine = os.path.join(racine, material + ".mtl")
         base = os.path.normcase(os.path.realpath(racine))
         for p in (fichier, a_la_racine):
-            if os.path.commonpath([base, os.path.normcase(os.path.realpath(p))]) != base:
+            try:
+                dedans = os.path.commonpath([base, os.path.normcase(os.path.realpath(p))]) == base
+            except ValueError:  # lecteurs différents
+                dedans = False
+            if not dedans:
                 raise ErreurCommande("chemin_refuse", "chemin hors de la bibliothèque : %s" % p)
         if os.path.exists(a_la_racine):
             raise ErreurCommande("existe", "un matériau %r est déjà à la racine de la bibliothèque : il serait "
@@ -1117,23 +1123,30 @@ class Pont:
         if not os.path.exists(a_la_racine):
             raise ErreurCommande("enregistrement", "saveMaterial n'a pas écrit %s" % a_la_racine)
         champs = {}
-        if cmf:
-            md = lx.findMaterialMetadata(material)
-            if md is None:
-                raise ErreurCommande("metadonnees", "matériau enregistré, mais ses métadonnées CMF sont introuvables")
-            existants = set(md.getFieldNames() or [])
-            for nom, valeur in cmf.items():
-                if nom in existants:
-                    md.updateField(nom, valeur)
-                else:
-                    md.createField(nom, valeur)
-                champs[nom] = valeur
-            lx.saveMaterialMetadata(md)
-            # Relecture : ce que KeyShot a réellement gardé.
-            relu = lx.findMaterialMetadata(material)
-            champs = {nom: self._lire(lambda nom=nom: relu.readField(nom)) for nom in cmf}
-        os.makedirs(os.path.dirname(fichier), exist_ok=True)
-        os.replace(a_la_racine, fichier)
+        try:
+            if cmf:
+                md = lx.findMaterialMetadata(material)
+                if md is None:
+                    raise ErreurCommande("metadonnees", "métadonnées CMF introuvables après l'enregistrement")
+                existants = set(md.getFieldNames() or [])
+                for nom, valeur in cmf.items():
+                    if nom in existants:
+                        md.updateField(nom, valeur)
+                    else:
+                        md.createField(nom, valeur)
+                lx.saveMaterialMetadata(md)
+                # Relecture : ce que KeyShot a réellement gardé.
+                relu = lx.findMaterialMetadata(material)
+                champs = {nom: self._lire(lambda nom=nom: relu.readField(nom)) for nom in cmf}
+            os.makedirs(os.path.dirname(fichier), exist_ok=True)
+            os.replace(a_la_racine, fichier)
+        except Exception:
+            # Rien ne doit rester à la racine : le prochain essai serait refusé (« existe »).
+            try:
+                os.remove(a_la_racine)
+            except OSError:
+                pass
+            raise
         return {"material": material, "library_folder": "Materials/" + relatif, "file": fichier, "cmf": champs}
 
     def c_save_scene(self, path=None, backup=True):
@@ -1229,7 +1242,7 @@ class Pont:
         for d in self._dossiers_textures():
             try:
                 if os.path.commonpath([os.path.normcase(reel), os.path.normcase(d)]) == os.path.normcase(d):
-                    return chemin
+                    return reel  # le chemin contrôlé, pas un lien qui changerait ensuite
             except ValueError:  # lecteurs différents
                 continue
         raise ErreurCommande("chemin_refuse", "texture hors des dossiers autorisés (%s) : %s"
@@ -1291,9 +1304,9 @@ class Pont:
         noeud, p = self._parametre(graphe, parameter, node_id)
         ancienne = p.getValue()
         nouvelle = self._couleur(value) if self._est_couleur(p) else value
-        if (p.getType() == getattr(self.lux, "PARAMETER_TYPE_STRING", object()) and isinstance(value, str)
-                and value.strip() and (":" in value or "/" in value or "\\" in value)):
-            nouvelle = self._chemin_texture(value)  # chemin de fichier (texture image)
+        if (p.getName() == "texture" and p.getType() == getattr(self.lux, "PARAMETER_TYPE_STRING", object())
+                and isinstance(value, str) and value.strip()):
+            nouvelle = self._chemin_texture(value)  # texture image : fichier contrôlé
         if (self._est_couleur(p) and p.getType() == getattr(self.lux, "PARAMETER_TYPE_COLORALPHA", None)
                 and isinstance(ancienne, (list, tuple)) and len(ancienne) == 4):
             nouvelle = tuple(nouvelle) + (ancienne[3],)  # couleur avec alpha : on garde l'alpha
