@@ -1,4 +1,4 @@
-libs/
+﻿libs/
 sorties/
 pyinstxtractor-master/
 refs/
@@ -11,3 +11,4 @@ REPRISE.md
 RECHERCHE.md
 phase2/
 PREPARATION-MATERIAUX.md
+dev-plugin/

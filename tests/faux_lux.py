@@ -168,6 +168,33 @@ class SceneNode:
     def isCamera(self):
         return False
 
+    def getKind(self):
+        return FauxLux.NODE_TYPE_OBJECT if self.isObject() else FauxLux.NODE_TYPE_GROUP
+
+    def find(self, types=None, **_):
+        """Comme KeyShot : les nœuds du sous-arbre du type demandé. Un groupe sans enfant
+        (primitive NURBS) n'est pas un objet : find(NODE_TYPE_OBJECT) ne le rend pas."""
+        if self.lux.sans_find:
+            raise AttributeError("find")
+        trouves = []
+        for e in self.getChildren():
+            if types is None or e.getKind() == types:
+                trouves.append(e)
+            trouves.extend(e.find(types=types))
+        return trouves
+
+    def getPath(self, text=False):
+        def chercher(noeud, chemin):
+            if noeud is self:
+                return chemin + [noeud]
+            for e in noeud.getChildren():
+                r = chercher(e, chemin + [noeud])
+                if r:
+                    return r
+            return None
+        chemin = chercher(self.lux.arbre, []) or [self]
+        return tuple(n.getName() for n in chemin) if text else tuple(chemin)
+
     def getBoundingBox(self, world=False):
         return (0.0, 0.0, 0.0), (10.0, 40.0, 10.0)
 
@@ -181,7 +208,13 @@ class SceneNode:
         return False
 
     def isHidden(self):
-        return False
+        return getattr(self, "masque", False)
+
+    def hide(self):
+        self.masque = True
+
+    def show(self):
+        self.masque = False
 
     def getMaterial(self):
         return self.materiau
@@ -222,6 +255,8 @@ class FauxLux:
     RenderOptions = RenderOptions
     MaterialGraph = MaterialGraph
     FOLDER_SCRIPTS = 15
+    NODE_TYPE_GROUP = 1
+    NODE_TYPE_OBJECT = 2
     PARAMETER_TYPE_COLOR = PARAMETER_TYPE_COLOR
     PARAMETER_TYPE_COLORALPHA = PARAMETER_TYPE_COLORALPHA
     PARAMETER_TYPE_DOUBLE = PARAMETER_TYPE_DOUBLE
@@ -247,6 +282,7 @@ class FauxLux:
         }
         self.vue_non_enregistree = False
         self.distance = 50.0
+        self.sans_find = False  # True : comme une version de KeyShot sans SceneNode.find
         o = lambda i, nom, mat: SceneNode(self, i, nom, materiau=mat)
         self.arbre = SceneNode(self, 0, "root", [
             SceneNode(self, 1, "Bouteille", [o(10, "Corps", "Plastique blanc"), o(11, "Bouchon", "Aluminium"),

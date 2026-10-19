@@ -46,33 +46,38 @@ def keyshot_materiaux() -> str:
    Un point flou (couleur sans code, finition absente) : le dire et choisir une valeur
    courante, sans bloquer.
 
-2. Base. Chercher dans la bibliothèque (list_library_materials, query) un matériau de la
-   bonne famille, de préférence OpenPBR_* ; sinon un type KeyShot dédié : Metal, Plastic,
-   Glass, Paint, Anisotropic ou Brushed (métal brossé), Mold-Tech (plastique grainé),
-   Leather, Wood. L'appliquer en copie (assign_material, duplicate=true), puis
-   get_material pour lire les noms exacts des paramètres avant de les régler.
+2. Base. Partir du matériau de bibliothèque le plus proche par la famille ET la finition :
+   ses réglages sont déjà justes. list_library_materials avec filter « Materials/Metal »,
+   « Materials/Plastic », « Materials/Glass », « Materials/Paint », « Materials/Mold-Tech »,
+   « Materials/Cloth and Leather », « Materials/Wood »… Les noms suivent la finition :
+   Polished / Brushed / Rough / Textured pour les métaux (Aluminum, Anodized Aluminum,
+   Brass, Chrome, Stainless Steel…), Hard / Soft / Clear + Shiny / Rough / Textured pour
+   les plastiques (Soft = soft-touch), Glass Light Frost / Heavy Frost pour le verre
+   dépoli. Ne pas partir des OpenPBR_* : ce sont des matériaux à textures (cuir, parquet).
+   Appliquer en copie (assign_material, duplicate=true), puis get_material : les
+   paramètres sont sur le nœud de shader (input_from de « surface »), pas sur la racine.
 
 3. Couleur. « #RRGGBB » est lu en sRGB et converti en linéaire par le pont ; [r, g, b]
    est pris tel quel, en linéaire 0-1. RAL et Pantone : utiliser l'équivalent sRGB connu
    et dire que c'est une approximation (écran, pas nuancier). Un relevé sur une photo est
-   aussi en sRGB : le passer en hex.
+   aussi en sRGB : le passer en hex. Paramètre de couleur selon le shader : `diffuse`
+   (plastiques lux_plastic_simple, lux_translucent), `color` (métaux lux_metal).
 
-4. Valeurs physiques (OpenPBR : specular_roughness, specular_ior, base_metalness,
-   transmission_weight ; les autres types ont des noms proches, voir get_material).
-   Rugosité selon la finition : poli miroir 0.02-0.05, brillant 0.05-0.12, satiné
-   0.20-0.35, microbillé 0.35-0.50, mat 0.45-0.70, soft-touch 0.55-0.75.
-   IOR : verre 1.52, PMMA 1.49, PP 1.49, ABS 1.54, PET 1.57, PC 1.585, vernis 1.50,
-   eau 1.33. Verre dépoli : garder la transmission, monter la rugosité (0.30-0.50).
-   Métaux (base_metalness 1, couleur en linéaire) : aluminium [0.91, 0.92, 0.92],
-   acier et inox [0.56, 0.57, 0.58], chrome [0.55, 0.56, 0.55], titane
-   [0.54, 0.50, 0.45], cuivre [0.95, 0.64, 0.54], or [1.00, 0.77, 0.34],
-   argent [0.97, 0.96, 0.92]. Anodisé : la couleur d'anodisation sur un métal.
-   Plastiques et peintures : base_metalness 0, specular_weight près de 1 (vernis :
-   ajouter une couche coat si le type en a une).
+4. Réglages KeyShot (vérifiés dans KeyShot 2026.2). Rugosité (`roughness`) : l'échelle est
+   courte. Poli ou brillant 0, satiné 0.03-0.06, microbillé ou « Rough » 0.1, mat
+   0.2-0.3 ; au-delà de 0.3 le rendu devient crayeux. Les matériaux « Rough » de la
+   bibliothèque sont à 0.1, les « Shiny » et « Polished » à 0.
+   Métaux (lux_metal) : `metal_type` 1 = métal préréglé (`metal_preset`), et `color` est
+   alors ignoré ; pour une couleur imposée (anodisé RAL, métal peint), mettre
+   `metal_type` à 0 puis régler `color`. `coated` ajoute le film d'anodisation
+   (`film_thickness`, `film_ior`, `film_extinction`) qui assombrit et irise.
+   Plastiques : `ior` 1.46 (Hard), 1.4 (Soft) ; le soft-touch est un lux_translucent
+   (`translucency` 0.1).
+   IOR de référence si un réglage est demandé : verre 1.52, PMMA 1.49, PP 1.49, ABS 1.54,
+   PET 1.57, PC 1.585, vernis 1.50, eau 1.33.
 
-5. Relief et motifs. Procédural plutôt qu'image (pas encore de texture image par le
-   pont) : add_material_node puis connect_material_nodes vers base_color ou
-   geometry_normal. Recettes : liège = NOISE_TEXTURE (grain) dans SPOTS (pores, bump
+5. Relief et motifs. Procédural : add_material_node puis connect_material_nodes vers le
+   paramètre de couleur ou de relief (`bumpmap`) du nœud de shader. Recettes : liège = NOISE_TEXTURE (grain) dans SPOTS (pores, bump
    négatif), MARBLE pour les veines ; bois = WOOD ou WOOD_ADVANCED ; métal brossé =
    BRUSHED ou BRUSHED_RADIAL ; plastique grainé = MOLD_TECH_PLASTIC ; cuir = LEATHER ;
    tissu = WEAVE, FIBER_WEAVE ou REALCLOTH ; rayures = SCRATCHES ; pierre = GRANITE.

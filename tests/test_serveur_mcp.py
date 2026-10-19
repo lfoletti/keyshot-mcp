@@ -122,7 +122,7 @@ class TestServeurMCP(unittest.TestCase):
         outils = {o["name"]: o for o in self.serveur.requete("tools/list")["tools"]}
         self.assertEqual(self.info["name"], "KeyShotMCP")
         for nom in ("keyshot_status", "screenshot", "assign_material", "render_image", "wait_for_render",
-                    "fit_camera", "save_scene", "add_material_node", "reload_bridge"):
+                    "fit_camera", "save_scene", "add_material_node", "reload_bridge", "set_visibility"):
             self.assertIn(nom, outils)
         self.assertTrue(outils["list_objects"]["annotations"]["readOnlyHint"])
         self.assertTrue(outils["save_scene"]["annotations"]["destructiveHint"])

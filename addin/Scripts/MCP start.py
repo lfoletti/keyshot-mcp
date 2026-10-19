@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # AUTHOR atelier oï
-# VERSION 0.3.2
+# VERSION 0.3.3
 # Bridge between Claude (keyshot MCP server) and this KeyShot window. Run once per session; MCP stop stops it.
 """Pont KeyShot pour le serveur MCP `keyshotmcp` (mode `timer`, B0).
 
@@ -48,7 +48,7 @@ try:
 except ImportError:
     lux = None
 
-BRIDGE_VERSION = "0.3.2"
+BRIDGE_VERSION = "0.3.3"
 NOM_MODULE = "keyshot_mcp_bridge"
 HOTE = "127.0.0.1"
 PORT = int(os.environ.get("KEYSHOT_MCP_PORT", "1998"))
@@ -188,6 +188,7 @@ class Pont:
             "disconnect_material_input": self.c_disconnect_material_input,
             "remove_material_node": self.c_remove_material_node,
             "list_objects": self.c_list_objects,
+            "set_visibility": self.c_set_visibility,
             "get_scene_tree": self.c_get_scene_tree,
             "assign_material": self.c_assign_material,
             "list_library_materials": self.c_list_library_materials,
@@ -733,16 +734,18 @@ class Pont:
                 pass
         raise ErreurCommande("introuvable", "nœud inconnu : %r" % (ident,))
 
-    def c_fit_camera(self, name, node_id, margin=1.15):
+    def c_fit_camera(self, name, node_id, margin=1.15, force=False):
         """Crée une caméra neuve `name`, la cadre sur le nœud (SceneNode.centerAndFit), recule
         de `margin` et l'enregistre. Les caméras existantes ne sont pas touchées. Si le cadrage
-        déplace la géométrie au lieu de la caméra, on annule et on le signale."""
+        déplace la géométrie au lieu de la caméra, on annule et on le signale. force=true :
+        passer outre une vue courante non enregistrée (elle est perdue)."""
         lx = self._lux()
         if name in (lx.getCameras() or []):
             raise ErreurCommande("existe", "la caméra %r existe déjà" % (name,))
-        if self._appel_doux("isCameraUnsaved") is True:
+        if not force and self._appel_doux("isCameraUnsaved") is True:
             raise ErreurCommande("vue_non_enregistree",
-                                 "la vue courante a des changements non enregistrés : les enregistrer d'abord")
+                                 "la vue courante a des changements non enregistrés : les enregistrer "
+                                 "d'abord, ou force=true pour les perdre")
         noeud = self._noeud(node_id)
         bmin, bmax = noeud.getBoundingBox(True)
         avant = self._vecteur(bmin) + self._vecteur(bmax)
@@ -778,9 +781,11 @@ class Pont:
     # --- objets : lecture de l'arbre, matériau appliqué pièce par pièce, annulable ---
 
     def _objets(self):
-        """{id: (noeud, chemin)} des objets de la scène (parcours de l'arbre)."""
+        """{id: (noeud, chemin)} des pièces de la scène : les objets, et les groupes sans
+        enfant qui portent un matériau (pièce importée, primitive NURBS)."""
         lx = self._lux()
         racine = lx.getSceneTree()
+        trouves = {}
         # Recherche documentée de KeyShot : tous les objets du sous-arbre.
         type_objet = getattr(lx, "NODE_TYPE_OBJECT", None)
         if type_objet is not None and hasattr(racine, "find"):
@@ -788,17 +793,14 @@ class Pont:
                 noeuds = racine.find(types=type_objet) or []
             except Exception:
                 noeuds = []
-            if noeuds:
-                trouves = {}
-                for n in noeuds:
-                    try:
-                        chemin = tuple(n.getPath(text=True))[1:] or (n.getName(),)
-                    except Exception:
-                        chemin = (n.getName(),)
-                    trouves[n.getID()] = (n, chemin)
-                return trouves
-        # Repli : parcours à la main. On descend dans tout ce qui n'est pas un objet.
-        trouves = {}
+            for n in noeuds:
+                try:
+                    chemin = tuple(n.getPath(text=True))[1:] or (n.getName(),)
+                except Exception:
+                    chemin = (n.getName(),)
+                trouves[n.getID()] = (n, chemin)
+        # Parcours à la main, toujours : find(OBJECT) ne rend pas les groupes sans enfant
+        # (primitives Sphere, Cube… de KeyShot 2026.2, constaté le 19.10.2026).
         pile = [(racine, ())]
         while pile:
             noeud, chemin = pile.pop()
@@ -817,7 +819,7 @@ class Pont:
                 # Une pièce importée apparaît comme un groupe sans enfant qui porte un matériau
                 # (KeyShot 2026.2, scène du 16.10.2026) ; isObject() y répond False.
                 if enfant.isObject() or (not sous and self._lire(enfant.getMaterial)):
-                    trouves[enfant.getID()] = (enfant, chemin + (nom,))
+                    trouves.setdefault(enfant.getID(), (enfant, chemin + (nom,)))
                 else:
                     pile.append((enfant, chemin + (nom,)))
         return trouves
@@ -897,6 +899,24 @@ class Pont:
             self.modifs_materiaux.append({"kind": "assign", "node_id": ident, "ancien": ancien,
                                           "material": applique})
         return {"material": applique, "objects": object_ids, "undo_depth": len(self.modifs_materiaux)}
+
+    def c_set_visibility(self, object_ids, visible):
+        """Montre (visible=true) ou masque des pièces. Rend l'état d'avant pour chacune."""
+        if not isinstance(object_ids, list) or not object_ids:
+            raise ErreurCommande("parametres", "object_ids : liste d'identifiants d'objets")
+        objets = self._objets()
+        inconnus = [i for i in object_ids if i not in objets]
+        if inconnus:
+            raise ErreurCommande("introuvable", "objets inconnus : %s" % inconnus)
+        avant = {}
+        for ident in object_ids:
+            noeud = objets[ident][0]
+            avant[ident] = not self._lire(noeud.isHidden)
+            if visible:
+                noeud.show()
+            else:
+                noeud.hide()
+        return {"visible": bool(visible), "objects": object_ids, "visible_before": avant}
 
     def c_list_library_materials(self, filter="", limit=500):
         """Matériaux de la bibliothèque. Le premier appel de la session charge la bibliothèque

@@ -22,7 +22,7 @@ import unittest
 from ctypes import wintypes
 
 import client_pont
-from faux_lux import FauxLux
+from faux_lux import FauxLux, SceneNode
 
 ICI = os.path.dirname(os.path.abspath(__file__))
 CHEMIN_PONT = os.path.join(ICI, "..", "addin", "Scripts", "MCP start.py")
@@ -452,6 +452,25 @@ class TestOutils(unittest.TestCase):
         r = self.b.appeler("list_objects", {"material": "Aluminium"})["result"]
         self.assertEqual(r["count"], 3)
 
+    def test_primitive_nurbs_vue_et_assignable(self):
+        # Primitive de KeyShot : groupe sans enfant qui porte un matériau. find(OBJECT) ne la
+        # rend pas, le parcours la trouve ; elle s'ajoute aux objets trouvés par find.
+        nurbs = SceneNode(self.b.lux, 30, "Sphere", [], "Plastique blanc")
+        self.b.lux.arbre.enfants.append(nurbs)
+        r = self.b.appeler("list_objects")["result"]
+        self.assertEqual([o["id"] for o in r["objects"]], [10, 11, 20, 21, 30])
+        self.assertEqual(r["objects"][2]["path"], "Bouteille / Texte / N")  # chemin donné par find
+        self.assertEqual(r["objects"][4]["path"], "Sphere")
+        r = self.b.appeler("assign_material", {"object_ids": [30], "material": "Aluminium",
+                                               "duplicate": True})["result"]
+        self.assertEqual(nurbs.getMaterial(), r["material"])
+
+    def test_list_objects_sans_find(self):
+        self.b.lux.sans_find = True
+        r = self.b.appeler("list_objects")["result"]
+        self.assertEqual([o["id"] for o in r["objects"]], [10, 11, 20, 21])
+        self.assertEqual(r["objects"][2]["path"], "Bouteille / Texte / N")
+
     def test_assign_et_copie_puis_annulation(self):
         # Lettrages : copie de l'aluminium recolorée, sans toucher le bouchon qui garde l'original.
         r = self.b.appeler("assign_material", {"object_ids": [20, 21], "material": "Aluminium",
@@ -566,6 +585,21 @@ class TestOutils(unittest.TestCase):
     def test_fit_camera_refuse_vue_non_enregistree(self):
         self.b.lux.vue_non_enregistree = True
         self.assertEqual(self.b.appeler("fit_camera", {"name": "X", "node_id": 1})["code"], "vue_non_enregistree")
+        r = self.b.appeler("fit_camera", {"name": "X", "node_id": 1, "force": True})
+        self.assertEqual(r["status"], "success")
+        self.assertIn("X", self.b.lux.cameras)
+
+    def test_set_visibility(self):
+        r = self.b.appeler("set_visibility", {"object_ids": [10, 11], "visible": False})["result"]
+        self.assertEqual(r["visible_before"], {"10": True, "11": True})
+        objets = {o["id"]: o for o in self.b.appeler("list_objects")["result"]["objects"]}
+        self.assertTrue(objets[10]["hidden"])
+        self.assertFalse(objets[20]["hidden"])
+        self.b.appeler("set_visibility", {"object_ids": [10], "visible": True})
+        objets = {o["id"]: o for o in self.b.appeler("list_objects")["result"]["objects"]}
+        self.assertFalse(objets[10]["hidden"])
+        self.assertEqual(self.b.appeler("set_visibility", {"object_ids": [999], "visible": False})["code"],
+                         "introuvable")
 
     def test_lux_functions(self):
         r = self.b.appeler("lux_functions", {"query": "camera"})["result"]
