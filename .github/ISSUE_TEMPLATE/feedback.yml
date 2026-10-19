@@ -1,0 +1,36 @@
+name: Feedback
+description: Tell us how you use keyshot-mcp, what helps and what is missing.
+labels: [feedback]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        keyshot-mcp is a prototype. Your feedback decides what comes next.
+  - type: dropdown
+    id: role
+    attributes:
+      label: Your work
+      options:
+        - Product or industrial design
+        - Rendering and visualization
+        - CMF (color, material, finish)
+        - Software development
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: use
+    attributes:
+      label: What do you do with keyshot-mcp?
+      description: An example of a request to Claude is useful.
+    validations:
+      required: true
+  - type: textarea
+    id: missing
+    attributes:
+      label: What is missing or difficult?
+  - type: input
+    id: keyshot
+    attributes:
+      label: KeyShot version
+      placeholder: "KeyShot Studio 2026.2 Pro"

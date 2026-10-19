@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions and ideas
+    url: https://github.com/lfoletti/keyshot-mcp/discussions
+    about: Ask a question or share an idea in the Discussions.
+  - name: Security problem
+    url: https://github.com/lfoletti/keyshot-mcp/security/advisories/new
+    about: Report a vulnerability in private. Do not open a public issue.
