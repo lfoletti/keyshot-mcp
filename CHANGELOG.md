@@ -14,6 +14,11 @@ The versions are the bridge versions (`BRIDGE_VERSION`).
 - Dependabot keeps the GitHub Actions up to date. The actions are pinned to a commit SHA.
 - CONTRIBUTING: `main` is protected. Each change goes through a pull request.
 
+### Changed
+
+- GitHub Actions: `actions/checkout` 7.0.1 and `actions/setup-python` 7.0.0.
+- The Claude review does not run on Dependabot pull requests.
+
 ### Fixed
 
 - `run.py` finds pywin32 in `libs` when Python starts with `-S`.
