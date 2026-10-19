@@ -25,9 +25,10 @@ def get_material(material: str) -> str:
 @mcp.tool(annotations=LECTURE)
 def list_library_materials(filter: str = "", query: str = "", limit: int = 300) -> str:
     """Matériaux de la bibliothèque KeyShot (près de 1 000). filter : dossier de la
-    bibliothèque ; query : texte cherché dans le nom (insensible à la casse), filtré côté
-    serveur. Le premier appel de la session charge la bibliothèque (quelques secondes).
-    Contient notamment des matériaux OpenPBR_* (base pour un matériau OpenPBR)."""
+    bibliothèque, préfixé de « Materials/ » (« Materials/Metal », « Materials/Plastic »,
+    « Materials/Glass »…) ; sans ce préfixe, rien n'est trouvé. query : texte cherché dans le
+    nom (insensible à la casse), filtré côté serveur. Le premier appel de la session charge
+    la bibliothèque (quelques secondes)."""
     r = appeler("list_library_materials", {"filter": filter or None, "limit": 5000}, lecture=True, delai=180)
     noms = r.get("materials", [])
     if query:

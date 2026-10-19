@@ -15,16 +15,23 @@ The versions are the bridge versions (`BRIDGE_VERSION`).
 - `SECURITY.md`: how to report a vulnerability in private.
 - Dependabot keeps the GitHub Actions up to date. The actions are pinned to a commit SHA.
 - CONTRIBUTING: `main` is protected. Each change goes through a pull request.
+- Tool `save_material_to_library`: saves a material made by the bridge to a subfolder of the KeyShot library, with its CMF fields (Name, Color, Finish, Material, Vendor, Notes).
+- Tool `set_visibility`: shows or hides parts.
+- `fit_camera`: `force=true` replaces a camera view that is not saved.
+- Texture images: the bridge accepts a path only in KeyShot's texture library, in `dossier_sorties` or in the new setting `dossiers_textures`. It refuses network paths.
 
 ### Changed
 
 - GitHub Actions: `actions/checkout` 7.0.1 and `actions/setup-python` 7.0.0.
 - The Claude review does not run on Dependabot pull requests.
+- `set_material_parameter`: without `node_id`, the bridge also looks for the parameter on the shader node (the node on `surface`).
+- Prompt `keyshot_materiaux`: values checked in KeyShot 2026.2 (library bases by finish, short roughness scale, metal color mode).
 - Bridge 0.3.2: a `#RRGGBB` color is sRGB. The bridge changes it to linear. Before, the bridge used it as linear and the color was too light. Scripts that send `#RRGGBB` now get darker, correct values.
 
 ### Fixed
 
 - `run.py` finds pywin32 in `libs` when Python starts with `-S`.
+- The bridge sees KeyShot primitives (Sphere, Cube…): groups without children that have a material.
 
 ## [0.3.1] - 2026-10-19
 

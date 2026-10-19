@@ -421,6 +421,10 @@ class TestOutils(unittest.TestCase):
         self.assertAlmostEqual(r["after"][0], 1.0, places=9)  # #FF8000 en sRGB → linéaire
         self.assertAlmostEqual(r["after"][1], 0.2158605, places=6)
         self.assertAlmostEqual(r["after"][2], 0.0, places=9)
+        # Couleur très sombre : branche linéaire de la conversion (c / 12.92).
+        r = self.b.appeler("set_material_parameter",
+                           {"material": "Plastique blanc", "parameter": "diffuse", "value": "#0A0A0A"})["result"]
+        self.assertAlmostEqual(r["after"][0], 10 / 255 / 12.92, places=9)
         self.b.appeler("set_material_parameter", {"material": "Aluminium", "parameter": "color", "value": [0, 0, 255]})
         self.b.appeler("set_material_parameter", {"material": "Plastique blanc", "parameter": "roughness", "value": 0.5})
         r = self.b.appeler("undo_material_changes")["result"]

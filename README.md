@@ -60,9 +60,9 @@ To update the bridge, copy the new file, then use the tool `reload_bridge`.
 
 | Group | Tools |
 |---|---|
-| Scene | `keyshot_status`, `get_scene_info`, `get_scene_tree`, `list_objects`, `screenshot`, `save_scene` |
+| Scene | `keyshot_status`, `get_scene_info`, `get_scene_tree`, `list_objects`, `set_visibility`, `screenshot`, `save_scene` |
 | Cameras and environment | `list_cameras`, `set_camera`, `fit_camera`, `list_environments`, `set_environment`, `set_realtime` |
-| Materials | `list_materials`, `get_material`, `list_library_materials`, `assign_material`, `set_material_parameter`, `rename_material`, `undo_material_changes`, `commit_material_changes` |
+| Materials | `list_materials`, `get_material`, `list_library_materials`, `assign_material`, `set_material_parameter`, `rename_material`, `undo_material_changes`, `commit_material_changes`, `save_material_to_library` |
 | Material graph | `add_material_node`, `connect_material_nodes`, `disconnect_material_input`, `remove_material_node` |
 | Render | `render_image`, `render_status`, `wait_for_render`, `view_image` |
 | Bridge | `lux_functions`, `reload_bridge`, `execute_python` (off by default) |
@@ -88,6 +88,7 @@ Optional file: `%LOCALAPPDATA%\keyshot-mcp\pont-config.json`.
 |---|---|
 | `execute_python` | `true` enables the tool `execute_python`. The default is `false`. |
 | `dossier_sorties` | Folder for screenshots, renders and scene backups. |
+| `dossiers_textures` | List of more folders where the bridge can read texture images. KeyShot's texture library and `dossier_sorties` are always allowed. |
 | `KEYSHOT_MCP_PORT` | Environment variable. Bridge port. The default is 1998. |
 | `KEYSHOT_MCP_TIMEOUT` | Environment variable. Server timeout in seconds. The default is 60. |
 | `KEYSHOT_MCP_EXECUTE_PYTHON` | Environment variable. `1` enables `execute_python`. |
@@ -112,7 +113,7 @@ py -3.13 test_pont.py
 py -3.13 test_serveur_mcp.py
 ```
 
-`test_pont.py` has 72 tests for the bridge. `test_serveur_mcp.py` has 9 end-to-end tests. The `essai_*.py` files need an open KeyShot.
+`test_pont.py` has 80 tests for the bridge. `test_serveur_mcp.py` has 9 end-to-end tests. The `essai_*.py` files need an open KeyShot.
 
 `test_serveur_mcp.py` starts the server with the Python that runs the test. If the packages in `libs` are for a different Python version, set `KEYSHOT_MCP_PYTHON` to the applicable `python.exe`.
 

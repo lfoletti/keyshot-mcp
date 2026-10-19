@@ -83,17 +83,27 @@ def keyshot_materiaux() -> str:
    tissu = WEAVE, FIBER_WEAVE ou REALCLOTH ; rayures = SCRATCHES ; pierre = GRANITE.
    Échelle des textures 3D : en mètres (0.002-0.01 pour un grain fin), à vérifier en
    capture.
+   Image : nœud SHADER_TYPE_TEXTURE_MAP, chemin dans son paramètre `texture`, puis
+   branchement sur la couleur (`normal` à true pour une carte de normales). Le pont
+   n'accepte que les images de la bibliothèque de textures de KeyShot, du dossier de
+   sortie ou des dossiers_textures de sa configuration.
 
 6. Nommer chaque copie d'après la fiche (rename_material), par exemple
    « CMF-01 Alu anodisé RAL 7016 microbillé ».
 
 7. Appliquer pièce par pièce : list_objects (bbox=true) pour reconnaître les pièces. Une
-   pièce douteuse : demander plutôt que deviner.
+   pièce douteuse : demander plutôt que deviner. set_visibility masque les pièces qui
+   gênent la vue.
 
-8. Contrôler : screenshot après chaque matériau, puis un rendu (render_image,
-   wait_for_render, view_image). Ajuster une valeur à la fois.
+8. Contrôler : screenshot après chaque matériau (attendre un instant : la vue temps réel
+   met une seconde à se recalculer), puis un rendu (render_image, wait_for_render,
+   view_image). Ajuster une valeur à la fois.
 
 9. Rendre compte : un tableau par matériau (code CMF, base, couleur, rugosité, IOR,
    nœuds ajoutés, approximations faites). commit_material_changes seulement quand
    l'utilisateur valide.
+
+10. Si l'utilisateur veut réutiliser les matériaux : save_material_to_library, dans un
+    sous-dossier à son nom de projet, avec les champs CMF de la fiche (Name, Color, Finish,
+    Material, Vendor, Notes). Le nom de la copie devient celui du matériau en bibliothèque.
 """
