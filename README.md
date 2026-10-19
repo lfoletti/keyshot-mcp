@@ -120,6 +120,10 @@ py -3.13 test_serveur_mcp.py
 
 Read [CONTRIBUTING.md](CONTRIBUTING.md).
 
+## Disclaimer
+
+keyshot-mcp is an independent project. It is not affiliated with Luxion or KeyShot, and Luxion does not endorse or sponsor it. KeyShot is a trademark of Luxion.
+
 ## License
 
 MIT
