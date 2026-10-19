@@ -12,6 +12,7 @@ The versions are the bridge versions (`BRIDGE_VERSION`).
 - GitHub Actions: Claude reviews each pull request and writes comments.
 - `SECURITY.md`: how to report a vulnerability in private.
 - Dependabot keeps the GitHub Actions up to date. The actions are pinned to a commit SHA.
+- CONTRIBUTING: `main` is protected. Each change goes through a pull request.
 
 ### Fixed
 

@@ -59,7 +59,7 @@ Some changes need a real KeyShot, for example a new `lux` call. Do these steps:
 
 ## Pull requests
 
-- Target the `main` branch.
+- Target the `main` branch. You cannot push directly to `main`: it is protected. The check `tests` must pass before the merge.
 - GitHub Actions runs the tests and an automatic review by Claude on each pull request. The tests must pass. Read the review comments.
 - Make one change for each pull request. Keep commits small.
 - Use conventional commits: `feat(bridge): ...`, `fix(server): ...`, `docs: ...`, `test: ...`.
