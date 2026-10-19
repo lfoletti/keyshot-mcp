@@ -1,0 +1,12 @@
+libs/
+sorties/
+pyinstxtractor-master/
+refs/
+keyshot_files/
+.claude/settings.local.json
+__pycache__/
+*.pyc
+PLAN.md
+REPRISE.md
+RECHERCHE.md
+phase2/

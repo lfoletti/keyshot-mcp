@@ -1,0 +1,26 @@
+{
+ "titre": "NICHE 108 WINE",
+ "sous_titre": "Étude de finitions  ·  4 variantes de verre, d'étiquette et de bouchon",
+ "dossier": "planche",
+ "fichier": "planche-niche108.png",
+ "variantes": [
+  {"nom": "Original", "detail": "verre vert, étiquette or brossé, lettrages noirs, bouchon bois", "pieces": []},
+  {"nom": "Or cristal", "detail": "verre doré uni façon cristal, étiquette et bouchon argent brossé, lettrages noirs",
+   "pieces": [
+    {"pieces": ["bouteille"], "material": "Glass (Solid) Red #1", "params": {"color": [0.85, 0.55, 0.05]}},
+    {"pieces": ["etiquette", "bouchon"], "material": "Or brossé Parmigiani 90° #1", "params": {"color": [0.70, 0.70, 0.72]}}
+   ]},
+  {"nom": "Sablé bordeaux", "detail": "verre sablé semi-transparent, étiquette bordeaux, lettrages et bouchon dorés",
+   "pieces": [
+    {"pieces": ["bouteille"], "material": "Glass Heavy Frost White"},
+    {"pieces": ["etiquette"], "material": "Paint Matte Black #1", "params": {"color": [0.20, 0.012, 0.03]}},
+    {"pieces": ["lettres", "bouchon"], "material": "Or brossé Parmigiani 90° #1"}
+   ]},
+  {"nom": "Blanc orange", "detail": "verre blanc, étiquette blanche, lettrages et bouchon orange",
+   "pieces": [
+    {"pieces": ["bouteille"], "material": "Hard Shiny Plastic White", "params": {"diffuse": [0.72, 0.72, 0.72]}},
+    {"pieces": ["etiquette"], "material": "Paint Matte White"},
+    {"pieces": ["lettres", "bouchon"], "material": "Paint Gloss Orange"}
+   ]}
+ ]
+}

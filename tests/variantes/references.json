@@ -1,0 +1,136 @@
+{
+ "titre": "NICHE 108 WINE",
+ "sous_titre": "Matériaux d'après références  ·  verre, étiquette, lettrages et bouchon (liquide ignoré)",
+ "dossier": "planche-refs",
+ "fichier": "planche-references.png",
+ "variantes": [
+  {
+   "nom": "D'après Coca-Cola",
+   "reference": "refs/coca-cola-original-plastic-bottle-15-l.jpg",
+   "detail": "PET transparent brillant, étiquette rouge brillante, lettrages blancs, bouchon plastique rouge",
+   "pieces": [
+    {
+     "pieces": [
+      "bouteille"
+     ],
+     "material": "Clear Shiny Plastic White"
+    },
+    {
+     "pieces": [
+      "etiquette"
+     ],
+     "material": "Paint Gloss Red",
+     "params": {
+      "color": [
+       0.5,
+       0.005,
+       0.003
+      ]
+     }
+    },
+    {
+     "pieces": [
+      "lettres"
+     ],
+     "material": "Paint Gloss White"
+    },
+    {
+     "pieces": [
+      "bouchon"
+     ],
+     "material": "Hard Shiny Plastic Red"
+    }
+   ]
+  },
+  {
+   "nom": "D'après Pepsi",
+   "reference": "refs/51btQudC3YL.jpg",
+   "detail": "PET transparent brillant, étiquette bleu roi brillante, lettrages blancs, bouchon plastique bleu",
+   "pieces": [
+    {
+     "pieces": [
+      "bouteille"
+     ],
+     "material": "Clear Shiny Plastic White"
+    },
+    {
+     "pieces": [
+      "etiquette"
+     ],
+     "material": "Paint Gloss Blue",
+     "params": {
+      "color": [
+       0.012,
+       0.03,
+       0.42
+      ]
+     }
+    },
+    {
+     "pieces": [
+      "lettres"
+     ],
+     "material": "Paint Gloss White"
+    },
+    {
+     "pieces": [
+      "bouchon"
+     ],
+     "material": "Hard Shiny Plastic Blue",
+     "params": {
+      "diffuse": [
+       0.01,
+       0.03,
+       0.45
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "nom": "D'après Orangina",
+   "reference": "refs/images.jpg",
+   "detail": "verre clair texturé, étiquette bleu marine brillante, lettrages blancs, capsule laquée bleu roi",
+   "pieces": [
+    {
+     "pieces": [
+      "bouteille"
+     ],
+     "material": "Glass Droplets White"
+    },
+    {
+     "pieces": [
+      "etiquette"
+     ],
+     "material": "Paint Gloss Blue",
+     "params": {
+      "color": [
+       0.006,
+       0.012,
+       0.11
+      ]
+     }
+    },
+    {
+     "pieces": [
+      "lettres"
+     ],
+     "material": "Paint Gloss White"
+    },
+    {
+     "pieces": [
+      "bouchon"
+     ],
+     "material": "Paint Gloss Blue",
+     "params": {
+      "color": [
+       0.03,
+       0.08,
+       0.6
+      ]
+     }
+    }
+   ]
+  }
+ ]
+}
