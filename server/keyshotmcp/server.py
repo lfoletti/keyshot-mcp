@@ -28,7 +28,7 @@ logger = logging.getLogger("keyshotmcp")
 TAILLE_ENTETE = 4
 TRAME_MAX = 64 * 1024 * 1024
 DELAI_S = float(os.environ.get("KEYSHOT_MCP_TIMEOUT", "60"))
-VERSION_PONT_ATTENDUE = "0.3.3"
+VERSION_PONT_ATTENDUE = "0.3.4"
 
 MSG_LANCER = ("Pont KeyShot introuvable. Ouvrez KeyShot, puis Window > Scripting Console > Scripts > "
               "MCP start > Run (ou, dans l'onglet Console : exec(open(r\"C:\\Users\\Public\\"

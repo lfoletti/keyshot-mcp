@@ -431,6 +431,52 @@ class TestOutils(unittest.TestCase):
         self.assertEqual(g["Aluminium"].noeuds[0].parametres[0].valeur, (0.8, 0.8, 0.8))
         self.assertEqual(r["undo_depth"], 0)
 
+    def _copie_metal(self):
+        return self.b.appeler("assign_material", {"object_ids": [10], "material": "Métal KeyShot",
+                                                  "duplicate": True})["result"]["material"]
+
+    def test_parametre_trouve_sur_le_shader(self):
+        # Sans node_id, le paramètre absent de la racine est cherché sur le shader de « surface ».
+        copie = self._copie_metal()
+        r = self.b.appeler("set_material_parameter", {"material": copie, "parameter": "roughness",
+                                                      "value": 0.1})["result"]
+        self.assertEqual(r["after"], 0.1)
+        r = self.b.appeler("set_material_parameter", {"material": copie, "parameter": "inexistant", "value": 1})
+        self.assertEqual(r["code"], "introuvable")
+        self.assertIn("roughness", r["message"])  # la liste montre les paramètres du shader
+
+    def test_texture_dans_un_dossier_autorise(self):
+        copie = self._copie_metal()
+        dossier = tempfile.mkdtemp(prefix="textures-")
+        try:
+            self.b.lux.dossier_textures = dossier
+            image = os.path.join(dossier, "grain.png")
+            with open(image, "wb") as f:
+                f.write(b"\x89PNG")
+            r = self.b.appeler("set_material_parameter", {"material": copie, "node_id": 207,
+                                                          "parameter": "texture", "value": image})
+            self.assertEqual(r["result"]["after"], image)
+        finally:
+            shutil.rmtree(dossier, ignore_errors=True)
+
+    def test_texture_refusee(self):
+        copie = self._copie_metal()
+        ailleurs = tempfile.mkdtemp(prefix="ailleurs-")
+        try:
+            self.b.lux.dossier_textures = os.path.join(tempfile.gettempdir(), "inexistant-textures")
+            image = os.path.join(ailleurs, "x.png")
+            with open(image, "wb") as f:
+                f.write(b"\x89PNG")
+            cas = {image: "chemin_refuse", r"\\serveur\partage\x.png": "chemin_refuse",
+                   os.path.join(ailleurs, "absente.png"): "introuvable",
+                   os.path.join(ailleurs, "notes.txt"): "parametres", "relatif/x.png": "parametres"}
+            for valeur, code in cas.items():
+                r = self.b.appeler("set_material_parameter", {"material": copie, "node_id": 207,
+                                                              "parameter": "texture", "value": valeur})
+                self.assertEqual(r.get("code"), code, valeur)
+        finally:
+            shutil.rmtree(ailleurs, ignore_errors=True)
+
     def test_couleur_alpha_garde_l_alpha(self):
         r = self.b.appeler("set_material_parameter",
                            {"material": "Aluminium", "parameter": "base", "value": [0.5, 0.4, 0.1]})["result"]

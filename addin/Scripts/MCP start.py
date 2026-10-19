@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # AUTHOR atelier oï
-# VERSION 0.3.3
+# VERSION 0.3.4
 # Bridge between Claude (keyshot MCP server) and this KeyShot window. Run once per session; MCP stop stops it.
 """Pont KeyShot pour le serveur MCP `keyshotmcp` (mode `timer`, B0).
 
@@ -48,7 +48,7 @@ try:
 except ImportError:
     lux = None
 
-BRIDGE_VERSION = "0.3.3"
+BRIDGE_VERSION = "0.3.4"
 NOM_MODULE = "keyshot_mcp_bridge"
 HOTE = "127.0.0.1"
 PORT = int(os.environ.get("KEYSHOT_MCP_PORT", "1998"))
@@ -215,7 +215,8 @@ class Pont:
         return log
 
     def _lire_config(self):
-        """pont-config.json (facultatif) : {"execute_python": bool, "dossier_sorties": chemin absolu}."""
+        """pont-config.json (facultatif) : {"execute_python": bool, "dossier_sorties": chemin absolu,
+        "dossiers_textures": [chemins absolus où les textures peuvent être lues]}."""
         try:
             with open(os.path.join(self.dossier, "pont-config.json"), encoding="utf-8") as f:
                 config = json.load(f)
@@ -235,6 +236,8 @@ class Pont:
             self.dossier_sorties = sorties
         else:
             self.dossier_sorties = self.dossier
+        textures = config.get("dossiers_textures")
+        self.dossiers_textures = [d for d in textures if isinstance(d, str) and os.path.isabs(d)]             if isinstance(textures, list) else []
 
     def _dossier_de(self, genre):
         """Sous-dossier de sortie (captures, rendus), créé au besoin."""
@@ -1092,16 +1095,72 @@ class Pont:
         self.modifs_materiaux = []
         return {"committed": n}
 
+    @staticmethod
+    def _chercher_parametre(noeud, parameter):
+        for p in noeud.getParameters() or []:
+            if parameter in (p.getName(), p.getDisplayName()):
+                return p
+        return None
+
     def _parametre(self, graphe, parameter, node_id):
+        """Le paramètre sur le nœud node_id ; sans node_id, sur la racine puis sur le nœud de
+        shader branché sur « surface » (où sont la couleur, la rugosité…)."""
         noeud = graphe.getRoot() if node_id is None else graphe.getNodeFromID(node_id)
         if noeud is None:
             raise ErreurCommande("introuvable", "nœud introuvable : %r" % (node_id,))
-        for p in noeud.getParameters() or []:
-            if parameter in (p.getName(), p.getDisplayName()):
-                return noeud, p
+        p = self._chercher_parametre(noeud, parameter)
+        if p is not None:
+            return noeud, p
+        if node_id is None:
+            try:
+                shader = noeud.getInputEdge("surface").getSourceNode()
+            except Exception:
+                shader = None
+            if shader is not None:
+                p = self._chercher_parametre(shader, parameter)
+                if p is not None:
+                    return shader, p
+                noeud = shader
         noms = [p.getName() for p in noeud.getParameters() or []]
         raise ErreurCommande("introuvable", "paramètre %r absent du nœud %r ; paramètres : %s"
                              % (parameter, noeud.getName(), ", ".join(noms)))
+
+    EXTENSIONS_TEXTURE = (".png", ".jpg", ".jpeg", ".tif", ".tiff", ".exr", ".hdr", ".bmp", ".tga")
+
+    def _dossiers_textures(self):
+        """Dossiers où une texture peut être lue : textures et ressources de KeyShot, dossier de
+        sortie du pont, dossiers_textures de pont-config.json."""
+        lx = self._lux()
+        dossiers = [self.dossier_sorties] + list(getattr(self, "dossiers_textures", []))
+        for nom in ("FOLDER_TEXTURES", "FOLDER_RESOURCE_ROOT"):
+            if hasattr(lx, nom):
+                try:
+                    dossiers.append(lx.getKeyShotFolder(getattr(lx, nom)))
+                except Exception:
+                    pass
+        return [os.path.realpath(d) for d in dossiers if d]
+
+    def _chemin_texture(self, valeur):
+        """Contrôle un chemin de texture avant de le donner à KeyShot : fichier image local,
+        existant, dans un dossier autorisé. Pas de chemin réseau."""
+        chemin = valeur.strip()
+        if chemin.startswith(("\\\\", "//")):
+            raise ErreurCommande("chemin_refuse", "chemin réseau refusé : %s" % chemin)
+        if not os.path.isabs(chemin):
+            raise ErreurCommande("parametres", "texture : chemin absolu attendu")
+        if os.path.splitext(chemin)[1].lower() not in self.EXTENSIONS_TEXTURE:
+            raise ErreurCommande("parametres", "texture : image attendue (%s)" % ", ".join(self.EXTENSIONS_TEXTURE))
+        reel = os.path.realpath(chemin)
+        if not os.path.isfile(reel):
+            raise ErreurCommande("introuvable", "texture introuvable : %s" % chemin)
+        for d in self._dossiers_textures():
+            try:
+                if os.path.commonpath([os.path.normcase(reel), os.path.normcase(d)]) == os.path.normcase(d):
+                    return chemin
+            except ValueError:  # lecteurs différents
+                continue
+        raise ErreurCommande("chemin_refuse", "texture hors des dossiers autorisés (%s) : %s"
+                             % ("; ".join(self._dossiers_textures()), chemin))
 
     @staticmethod
     def _couleur(valeur):
@@ -1159,6 +1218,9 @@ class Pont:
         noeud, p = self._parametre(graphe, parameter, node_id)
         ancienne = p.getValue()
         nouvelle = self._couleur(value) if self._est_couleur(p) else value
+        if (p.getType() == getattr(self.lux, "PARAMETER_TYPE_STRING", object()) and isinstance(value, str)
+                and value.strip() and (":" in value or "/" in value or "\\" in value)):
+            nouvelle = self._chemin_texture(value)  # chemin de fichier (texture image)
         if (self._est_couleur(p) and p.getType() == getattr(self.lux, "PARAMETER_TYPE_COLORALPHA", None)
                 and isinstance(ancienne, (list, tuple)) and len(ancienne) == 4):
             nouvelle = tuple(nouvelle) + (ancienne[3],)  # couleur avec alpha : on garde l'alpha

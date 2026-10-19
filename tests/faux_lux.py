@@ -29,6 +29,8 @@ class RenderOptions:
 PARAMETER_TYPE_COLOR = 13
 PARAMETER_TYPE_COLORALPHA = 14
 PARAMETER_TYPE_DOUBLE = 4
+PARAMETER_TYPE_STRING = 9
+PARAMETER_TYPE_SHADERSURFACE = 65537
 
 
 class ShaderParameter:
@@ -229,10 +231,15 @@ class SceneNode:
                 n += 1
             copie = "%s #%d" % (mat, n)
             source = self.lux.graphes[mat]
-            self.lux.graphes[copie] = MaterialGraph(copie, [ShaderNode(
+            nouveau = MaterialGraph(copie, [ShaderNode(
                 nd.ident + 100 * n, nd.nom, nd.genre,
                 [ShaderParameter(p.nom, p.affiche, p.genre, p.valeur) for p in nd.parametres])
                 for nd in source.noeuds])
+            # Comme KeyShot, la copie garde les branchements.
+            rang = {id(nd): k for k, nd in enumerate(source.noeuds)}
+            nouveau.aretes = [ShaderEdge(a.ident + 100 * n, nouveau.noeuds[rang[id(a.source)]],
+                                         nouveau.noeuds[rang[id(a.cible)]], a.parametre) for a in source.aretes]
+            self.lux.graphes[copie] = nouveau
             mat = copie
         self.materiau = mat
 
@@ -260,6 +267,8 @@ class FauxLux:
     PARAMETER_TYPE_COLOR = PARAMETER_TYPE_COLOR
     PARAMETER_TYPE_COLORALPHA = PARAMETER_TYPE_COLORALPHA
     PARAMETER_TYPE_DOUBLE = PARAMETER_TYPE_DOUBLE
+    PARAMETER_TYPE_STRING = PARAMETER_TYPE_STRING
+    FOLDER_TEXTURES = 4
 
     def __init__(self):
         self.cameras = ["last_active", "Vue 1"]
@@ -272,7 +281,18 @@ class FauxLux:
         self.en_pause = False
         self.pause_par_rendu = False
         self.vient_de_pause = False
+        # Comme KeyShot : la racine porte « surface », branchée sur le nœud de shader.
+        metal = MaterialGraph("Métal KeyShot", [
+            ShaderNode(5, "Métal KeyShot", {"name": "__root"}, [
+                ShaderParameter("surface", "Surface", PARAMETER_TYPE_SHADERSURFACE, None)]),
+            ShaderNode(6, "", {"name": "lux_metal"}, [
+                ShaderParameter("color", "Couleur", PARAMETER_TYPE_COLORALPHA, (1.0, 1.0, 1.0, 1.0)),
+                ShaderParameter("roughness", "Rugosité", PARAMETER_TYPE_DOUBLE, 0.0)]),
+            ShaderNode(7, "", {"name": "__texture"}, [
+                ShaderParameter("texture", "Texture", PARAMETER_TYPE_STRING, "")])])
+        metal.aretes.append(ShaderEdge(900, metal.noeuds[1], metal.noeuds[0], "surface"))
         self.graphes = {
+            "Métal KeyShot": metal,
             "Plastique blanc": MaterialGraph("Plastique blanc", [ShaderNode(1, "Plastique blanc", "plastic", [
                 ShaderParameter("diffuse", "Diffuse", PARAMETER_TYPE_COLOR, (0.9, 0.9, 0.9)),
                 ShaderParameter("roughness", "Roughness", PARAMETER_TYPE_DOUBLE, 0.1)])]),
@@ -425,4 +445,6 @@ class FauxLux:
         return False
 
     def getKeyShotFolder(self, quoi):
+        if quoi == self.FOLDER_TEXTURES and getattr(self, "dossier_textures", None):
+            return self.dossier_textures
         return os.getcwd()
