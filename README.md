@@ -134,7 +134,7 @@ keyshot-mcp is a working prototype. It is tested with KeyShot Studio 2026.2 Pro 
 
 ## Disclaimer
 
-keyshot-mcp is an independent project. It is not affiliated with Luxion or KeyShot, and Luxion does not endorse or sponsor it. KeyShot is a trademark of Luxion.
+keyshot-mcp is an independent project. It is not affiliated with Luxion or KeyShot, and so far Luxion does not endorse or sponsor it. KeyShot is a trademark of Luxion.
 
 ## License
 
