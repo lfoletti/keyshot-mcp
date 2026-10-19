@@ -6,6 +6,11 @@ The versions are the bridge versions (`BRIDGE_VERSION`).
 
 ## [Unreleased]
 
+### Added
+
+- GitHub Actions: the tests run on Windows for each pull request and each push to `main`.
+- GitHub Actions: Claude reviews each pull request and writes comments.
+
 ## [0.3.1] - 2026-10-19
 
 ### Changed

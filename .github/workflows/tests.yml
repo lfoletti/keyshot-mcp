@@ -1,0 +1,37 @@
+name: Tests
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    # Le pont utilise la minuterie Windows (SetTimer).
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install mcp in libs
+        run: python -m pip install --target libs mcp==1.28.1
+
+      - name: Check imports
+        run: python -I -S run.py --check
+
+      - name: Bridge tests
+        working-directory: tests
+        run: python test_pont.py
+
+      - name: End-to-end tests
+        working-directory: tests
+        run: python test_serveur_mcp.py
