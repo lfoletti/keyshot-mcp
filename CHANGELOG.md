@@ -11,6 +11,13 @@ The bridge, the stop script and the MCP server have the same version.
 
 - README: status "prototype" (badge, note at the top, section *Status*).
 - Issue templates *Bug* and *Feedback*. Questions go to the Discussions, security problems to a private report.
+- Pull request template with a *Failing first* section; CONTRIBUTING explains the rule.
+- `tests/mutations_pont.py`: disables each safety rule of the bridge and checks that a test fails.
+- Tests for two safety rules that no test covered: a peer that is not `127.0.0.1` is closed without a reply; a library folder that is a link outside the library is refused.
+
+### Changed
+
+- `test_pont.py` runs outside Windows: the real-timer test is skipped there, and the test bench waits for the bridge to accept the connection and to receive the bytes instead of assuming the loopback is synchronous.
 
 ## [1.0.0] - 2026-10-19
 

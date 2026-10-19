@@ -32,6 +32,22 @@ All the tests must pass.
 - If you change a tool, add a test in `test_serveur_mcp.py`.
 - If `faux_lux.py` does not have a `lux` function that you need, add it. Copy the behavior of the real `lux` function.
 
+### Failing first
+
+"The tests pass after the change" is not enough. A test proves a change only if it fails without the change. Before you open the pull request:
+
+1. For each rule or behavior you add or fix, name the test that covers it.
+2. Check that the test fails without your code. Put the test files on the tree without the fix and run the suite. If the tests do not compile without the code (new functions), disable each rule with a mutation that compiles (`if False:`, a removed `raise`, an inverted condition) and check that a test fails.
+3. A rule that no mutation makes fail has no test. Add the missing case before you continue.
+4. Write the proof in the pull request, section *Failing first*: the mutation and the test that fails, or the `FAIL` lines you saw, with the command to replay. The pull request template has the table.
+
+For the safety rules of the bridge, `tests/mutations_pont.py` does steps 2 and 3: it disables each rule, runs `test_pont.py` and prints the tests that fail. If you add a safety rule to the bridge, add its mutation to `MUTATIONS` in this script.
+
+```
+cd tests
+py -3.13 mutations_pont.py
+```
+
 ## Tests with KeyShot
 
 Some changes need a real KeyShot, for example a new `lux` call. Do these steps:
