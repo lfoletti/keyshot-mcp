@@ -4,8 +4,8 @@
 
 ## Failing first
 
-<!-- A test proves a change only if it fails without it. See CONTRIBUTING.md, *Failing first*.
-     One row per rule or behavior added or fixed. -->
+<!-- The procedure is in CONTRIBUTING.md, *Failing first*. Here, only the proof:
+     one row per rule or behavior added or fixed, and the command that replays it. -->
 
 | Rule or behavior | Test | Proof (mutation → test that fails, or `FAIL` lines seen without the fix) |
 |---|---|---|
@@ -14,9 +14,7 @@
 Command to replay:
 
 ```
-cd tests
-py -3.13 test_pont.py
-py -3.13 test_serveur_mcp.py
+
 ```
 
 ## Checklist

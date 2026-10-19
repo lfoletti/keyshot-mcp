@@ -41,7 +41,7 @@ All the tests must pass.
 3. A rule that no mutation makes fail has no test. Add the missing case before you continue.
 4. Write the proof in the pull request, section *Failing first*: the mutation and the test that fails, or the `FAIL` lines you saw, with the command to replay. The pull request template has the table.
 
-For the safety rules of the bridge, `tests/mutations_pont.py` does steps 2 and 3: it disables each rule, runs `test_pont.py` and prints the tests that fail. If you add a safety rule to the bridge, add its mutation to `MUTATIONS` in this script.
+For the safety rules of the bridge, `tests/mutations_pont.py` does steps 2 and 3: it disables each rule in a temporary copy of the bridge, runs `test_pont.py` on that copy (variable `KEYSHOT_MCP_PONT`) and prints the tests that fail. The bridge on your tree is never written. If you add a safety rule to the bridge, add its mutation to `MUTATIONS` in this script.
 
 ```
 cd tests

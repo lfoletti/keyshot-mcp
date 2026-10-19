@@ -26,7 +26,8 @@ import client_pont
 from faux_lux import FauxLux, SceneNode
 
 ICI = os.path.dirname(os.path.abspath(__file__))
-CHEMIN_PONT = os.path.join(ICI, "..", "addin", "Scripts", "MCP start.py")
+# KEYSHOT_MCP_PONT : un autre fichier de pont, p. ex. une copie mutée par mutations_pont.py.
+CHEMIN_PONT = os.environ.get("KEYSHOT_MCP_PONT") or os.path.join(ICI, "..", "addin", "Scripts", "MCP start.py")
 
 
 def charger_pont():

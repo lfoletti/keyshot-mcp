@@ -4,14 +4,17 @@
     py -3.13 mutations_pont.py            # toutes les mutations
     py -3.13 mutations_pont.py M5 M7      # quelques-unes
 
-Chaque mutation désactive une règle du pont dans `addin/Scripts/MCP start.py`, rejoue
-`test_pont.py` et note les tests qui tombent. Le pont est restauré à la fin, quoi qu'il arrive.
+Chaque mutation désactive une règle du pont dans une copie temporaire de
+`addin/Scripts/MCP start.py`, puis rejoue `test_pont.py` sur cette copie (variable
+KEYSHOT_MCP_PONT) et note les tests qui tombent. Le pont de l'arbre n'est jamais écrit.
 Une règle qu'aucun test ne fait tomber est affichée « AUCUN TEST NE TOMBE » : il manque un test.
 """
 import os
 import re
+import shutil
 import subprocess
 import sys
+import tempfile
 
 ICI = os.path.dirname(os.path.abspath(__file__))
 PONT = os.path.join(ICI, "..", "addin", "Scripts", "MCP start.py")
@@ -49,6 +52,9 @@ MUTATIONS = [
 
 def main(codes):
     original = open(PONT, encoding="utf-8").read()
+    dossier = tempfile.mkdtemp(prefix="pont-mute-")
+    copie = os.path.join(dossier, "MCP start.py")
+    env = dict(os.environ, KEYSHOT_MCP_PONT=copie)
     sans_test = []
     try:
         for code, regle, avant, apres in MUTATIONS:
@@ -59,17 +65,17 @@ def main(codes):
                       % (code, regle, original.count(avant)), flush=True)
                 sans_test.append(code)
                 continue
-            with open(PONT, "w", encoding="utf-8") as f:
+            with open(copie, "w", encoding="utf-8") as f:
                 f.write(original.replace(avant, apres, 1))
-            p = subprocess.run([sys.executable, "test_pont.py"], cwd=ICI, capture_output=True, text=True, timeout=900)
+            p = subprocess.run([sys.executable, "test_pont.py"], cwd=ICI, env=env,
+                               capture_output=True, text=True, timeout=900)
             sortie = p.stderr + p.stdout
             tombes = sorted(set(re.findall(r"^(?:FAIL|ERROR): (\w+)", sortie, re.M)))
             if not tombes:
                 sans_test.append(code)
             print("%-4s %-50s %s" % (code, regle, ", ".join(tombes) or "AUCUN TEST NE TOMBE"), flush=True)
     finally:
-        with open(PONT, "w", encoding="utf-8") as f:
-            f.write(original)
+        shutil.rmtree(dossier, ignore_errors=True)
     return 1 if sans_test else 0
 
 

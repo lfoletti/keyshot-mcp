@@ -12,7 +12,7 @@ The bridge, the stop script and the MCP server have the same version.
 - README: status "prototype" (badge, note at the top, section *Status*).
 - Issue templates *Bug* and *Feedback*. Questions go to the Discussions, security problems to a private report.
 - Pull request template with a *Failing first* section; CONTRIBUTING explains the rule.
-- `tests/mutations_pont.py`: disables each safety rule of the bridge and checks that a test fails.
+- `tests/mutations_pont.py`: disables each safety rule of the bridge in a temporary copy and checks that a test fails.
 - Tests for two safety rules that no test covered: a peer that is not `127.0.0.1` is closed without a reply; a library folder that is a link outside the library is refused.
 
 ### Changed
