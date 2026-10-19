@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # AUTHOR atelier oï
-# VERSION 0.3.1
+# VERSION 0.3.2
 # Bridge between Claude (keyshot MCP server) and this KeyShot window. Run once per session; MCP stop stops it.
 """Pont KeyShot pour le serveur MCP `keyshotmcp` (mode `timer`, B0).
 
@@ -48,7 +48,7 @@ try:
 except ImportError:
     lux = None
 
-BRIDGE_VERSION = "0.3.1"
+BRIDGE_VERSION = "0.3.2"
 NOM_MODULE = "keyshot_mcp_bridge"
 HOTE = "127.0.0.1"
 PORT = int(os.environ.get("KEYSHOT_MCP_PORT", "1998"))
@@ -1085,15 +1085,18 @@ class Pont:
 
     @staticmethod
     def _couleur(valeur):
-        """'#RRGGBB' ou [r, g, b] (0-1, ou 0-255 si une composante dépasse 1) → (r, g, b) en 0-1."""
+        """'#RRGGBB' (sRGB, converti en linéaire) ou [r, g, b] (linéaire 0-1, ou 0-255 si une
+        composante dépasse 1) → (r, g, b) en linéaire 0-1."""
         if isinstance(valeur, str):
             h = valeur.strip().lstrip("#")
             if len(h) != 6:
                 raise ErreurCommande("parametres", "couleur attendue sous la forme #RRGGBB : %r" % (valeur,))
             try:
-                return tuple(int(h[i:i + 2], 16) / 255.0 for i in (0, 2, 4))
+                srgb = [int(h[i:i + 2], 16) / 255.0 for i in (0, 2, 4)]
             except ValueError:
                 raise ErreurCommande("parametres", "couleur invalide : %r" % (valeur,))
+            # Un code hex (nuancier, RAL, Pantone, relevé sur photo) est en sRGB.
+            return tuple(c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4 for c in srgb)
         if isinstance(valeur, (list, tuple)) and len(valeur) == 3 and all(
                 isinstance(c, (int, float)) and not isinstance(c, bool) for c in valeur):
             echelle = 255.0 if any(c > 1 for c in valeur) else 1.0

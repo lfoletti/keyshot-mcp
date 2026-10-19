@@ -67,6 +67,15 @@ To update the bridge, copy the new file, then use the tool `reload_bridge`.
 | Render | `render_image`, `render_status`, `wait_for_render`, `view_image` |
 | Bridge | `lux_functions`, `reload_bridge`, `execute_python` (off by default) |
 
+Two MCP prompts give Claude the method:
+
+| Prompt | Use |
+|---|---|
+| `keyshot_strategy` | How to work in KeyShot without damage to the scene. |
+| `keyshot_materiaux` | How to make materials from a CMF sheet (color, material, finish) or a description: physical values, colors, node recipes. |
+
+Colors: `[r, g, b]` is linear (0-1). `#RRGGBB` is sRGB: the bridge changes it to linear.
+
 ## Settings
 
 Optional file: `%LOCALAPPDATA%\keyshot-mcp\pont-config.json`.

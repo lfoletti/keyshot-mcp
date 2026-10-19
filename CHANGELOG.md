@@ -10,6 +10,7 @@ The versions are the bridge versions (`BRIDGE_VERSION`).
 
 - GitHub Actions: the tests run on Windows for each pull request and each push to `main`.
 - GitHub Actions: Claude reviews each pull request and writes comments.
+- MCP prompt `keyshot_materiaux`: method to make materials from a CMF sheet or a description.
 - `SECURITY.md`: how to report a vulnerability in private.
 - Dependabot keeps the GitHub Actions up to date. The actions are pinned to a commit SHA.
 - CONTRIBUTING: `main` is protected. Each change goes through a pull request.
@@ -22,6 +23,7 @@ The versions are the bridge versions (`BRIDGE_VERSION`).
 ### Fixed
 
 - `run.py` finds pywin32 in `libs` when Python starts with `-S`.
+- Bridge 0.3.2: a `#RRGGBB` color is sRGB. The bridge changes it to linear. Before, the bridge used it as linear and the color was too light.
 
 ## [0.3.1] - 2026-10-19
 

@@ -145,7 +145,7 @@ class TestServeurMCP(unittest.TestCase):
         self.assertEqual(r["material"], "Aluminium #2")  # copie par défaut
         r = texte(self.serveur.outil("set_material_parameter", {"material": "Aluminium #2", "parameter": "color",
                                                                 "value": "#FF0000"}))
-        self.assertEqual(r["after"], [1.0, 0.0, 0.0])
+        self.assertEqual(r["after"], [1.0, 0.0, 0.0])  # 0 et 1 sont identiques en sRGB et en linéaire
         texte(self.serveur.outil("undo_material_changes"))
         mats = {o["id"]: o["material"] for o in texte(self.serveur.outil("list_objects"))["objects"]}
         self.assertEqual(mats[20], "Aluminium")
@@ -165,6 +165,9 @@ class TestServeurMCP(unittest.TestCase):
     def test_07_prompt(self):
         prompts = [p["name"] for p in self.serveur.requete("prompts/list")["prompts"]]
         self.assertIn("keyshot_strategy", prompts)
+        self.assertIn("keyshot_materiaux", prompts)
+        texte_prompt = self.serveur.requete("prompts/get", {"name": "keyshot_materiaux"})["messages"][0]["content"]["text"]
+        self.assertIn("sRGB", texte_prompt)
 
     def test_08_pont_relance_nouveau_port_et_jeton(self):
         ancien_port = self.pont.pont.port

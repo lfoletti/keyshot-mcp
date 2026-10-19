@@ -418,7 +418,9 @@ class TestOutils(unittest.TestCase):
                            {"material": "Plastique blanc", "parameter": "Diffuse", "value": "#FF8000"})["result"]
         self.assertEqual(r["parameter"], "diffuse")
         self.assertEqual(r["before"], [0.9, 0.9, 0.9])
-        self.assertEqual(r["after"], [1.0, 128 / 255.0, 0.0])
+        self.assertEqual(r["after"][0], 1.0)  # #FF8000 en sRGB → linéaire
+        self.assertAlmostEqual(r["after"][1], 0.2158605, places=6)
+        self.assertEqual(r["after"][2], 0.0)
         self.b.appeler("set_material_parameter", {"material": "Aluminium", "parameter": "color", "value": [0, 0, 255]})
         self.b.appeler("set_material_parameter", {"material": "Plastique blanc", "parameter": "roughness", "value": 0.5})
         r = self.b.appeler("undo_material_changes")["result"]
