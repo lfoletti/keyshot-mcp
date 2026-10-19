@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # AUTHOR atelier oï
-# VERSION 0.3.5
+# VERSION 0.3.6
 # Bridge between Claude (keyshot MCP server) and this KeyShot window. Run once per session; MCP stop stops it.
 """Pont KeyShot pour le serveur MCP `keyshotmcp` (mode `timer`, B0).
 
@@ -48,7 +48,7 @@ try:
 except ImportError:
     lux = None
 
-BRIDGE_VERSION = "0.3.5"
+BRIDGE_VERSION = "0.3.6"
 NOM_MODULE = "keyshot_mcp_bridge"
 HOTE = "127.0.0.1"
 PORT = int(os.environ.get("KEYSHOT_MCP_PORT", "1998"))
@@ -238,7 +238,8 @@ class Pont:
         else:
             self.dossier_sorties = self.dossier
         textures = config.get("dossiers_textures")
-        self.dossiers_textures = [d for d in textures if isinstance(d, str) and os.path.isabs(d)]             if isinstance(textures, list) else []
+        self.dossiers_textures = ([d for d in textures if isinstance(d, str) and os.path.isabs(d)]
+                                  if isinstance(textures, list) else [])
 
     def _dossier_de(self, genre):
         """Sous-dossier de sortie (captures, rendus), créé au besoin."""
@@ -1049,8 +1050,19 @@ class Pont:
         graphe.removeNode(self._noeud_graphe(graphe, node_id))
         return {"removed": True}
 
+    @staticmethod
+    def _nom_sur(nom):
+        """Un nom de matériau sert aussi de nom de fichier (bibliothèque) : pas de séparateur
+        de chemin, de « : » ni de « .. »."""
+        if (not isinstance(nom, str) or not nom.strip() or nom != nom.strip() or ".." in nom
+                or any(c in nom for c in '/\\:*?"<>|')):
+            raise ErreurCommande("parametres", "nom de matériau refusé (sans / \\ : * ? \" < > | ni ..) : %r"
+                                 % (nom,))
+        return nom
+
     def c_rename_material(self, material, new_name):
         """Renomme une copie créée par le pont (nom porté par le nœud racine du graphe)."""
+        self._nom_sur(new_name)
         graphe = self._graphe_editable(material)
         if new_name in (self._lux().getSceneMaterials() or []):
             raise ErreurCommande("existe", "un matériau %r existe déjà dans la scène" % (new_name,))
@@ -1080,6 +1092,7 @@ class Pont:
         Notes). Refusé si un matériau du même nom existe déjà dans ce dossier, sauf overwrite."""
         lx = self._lux()
         self._graphe_editable(material)  # seulement nos copies, présentes dans la scène
+        self._nom_sur(material)
         relatif = self._dossier_bibliotheque(folder)
         if cmf is not None and (not isinstance(cmf, dict)
                                 or not all(isinstance(k, str) and isinstance(v, str) for k, v in cmf.items())):
@@ -1089,6 +1102,10 @@ class Pont:
         # KeyShot 2026.2 ignore `folder` : saveMaterial écrit toujours à la racine de la
         # bibliothèque (constaté le 19.10.2026). On y enregistre, puis on déplace le fichier.
         a_la_racine = os.path.join(racine, material + ".mtl")
+        base = os.path.normcase(os.path.realpath(racine))
+        for p in (fichier, a_la_racine):
+            if os.path.commonpath([base, os.path.normcase(os.path.realpath(p))]) != base:
+                raise ErreurCommande("chemin_refuse", "chemin hors de la bibliothèque : %s" % p)
         if os.path.exists(a_la_racine):
             raise ErreurCommande("existe", "un matériau %r est déjà à la racine de la bibliothèque : il serait "
                                  "écrasé ; le renommer d'abord (rename_material)" % (material,))
@@ -1185,16 +1202,15 @@ class Pont:
     EXTENSIONS_TEXTURE = (".png", ".jpg", ".jpeg", ".tif", ".tiff", ".exr", ".hdr", ".bmp", ".tga")
 
     def _dossiers_textures(self):
-        """Dossiers où une texture peut être lue : textures et ressources de KeyShot, dossier de
-        sortie du pont, dossiers_textures de pont-config.json."""
+        """Dossiers où une texture peut être lue : bibliothèque de textures de KeyShot, dossier
+        de sortie du pont, dossiers_textures de pont-config.json."""
         lx = self._lux()
         dossiers = [self.dossier_sorties] + list(getattr(self, "dossiers_textures", []))
-        for nom in ("FOLDER_TEXTURES", "FOLDER_RESOURCE_ROOT"):
-            if hasattr(lx, nom):
-                try:
-                    dossiers.append(lx.getKeyShotFolder(getattr(lx, nom)))
-                except Exception:
-                    pass
+        if hasattr(lx, "FOLDER_TEXTURES"):
+            try:
+                dossiers.append(lx.getKeyShotFolder(lx.FOLDER_TEXTURES))
+            except Exception:
+                pass
         return [os.path.realpath(d) for d in dossiers if d]
 
     def _chemin_texture(self, valeur):

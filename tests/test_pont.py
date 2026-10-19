@@ -504,6 +504,15 @@ class TestOutils(unittest.TestCase):
         finally:
             shutil.rmtree(biblio, ignore_errors=True)
 
+    def test_nom_de_materiau_sans_chemin(self):
+        copie = self._copie_metal()
+        for nom in (r"..\..\x", "../x", "a/b", "C:x", "a..b", " x", ""):
+            r = self.b.appeler("rename_material", {"material": copie, "new_name": nom})
+            self.assertEqual(r["code"], "parametres", nom)
+        # Un nom ordinaire passe le contrôle (le faux lux ne sait pas renommer : autre erreur).
+        r = self.b.appeler("rename_material", {"material": copie, "new_name": "CMF-01 Alu anodisé"})
+        self.assertNotEqual(r.get("code"), "parametres")
+
     def test_enregistrer_refuse(self):
         biblio = tempfile.mkdtemp(prefix="materiaux-")
         try:
