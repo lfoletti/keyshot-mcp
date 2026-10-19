@@ -20,11 +20,11 @@ The versions are the bridge versions (`BRIDGE_VERSION`).
 
 - GitHub Actions: `actions/checkout` 7.0.1 and `actions/setup-python` 7.0.0.
 - The Claude review does not run on Dependabot pull requests.
+- Bridge 0.3.2: a `#RRGGBB` color is sRGB. The bridge changes it to linear. Before, the bridge used it as linear and the color was too light. Scripts that send `#RRGGBB` now get darker, correct values.
 
 ### Fixed
 
 - `run.py` finds pywin32 in `libs` when Python starts with `-S`.
-- Bridge 0.3.2: a `#RRGGBB` color is sRGB. The bridge changes it to linear. Before, the bridge used it as linear and the color was too light.
 
 ## [0.3.1] - 2026-10-19
 

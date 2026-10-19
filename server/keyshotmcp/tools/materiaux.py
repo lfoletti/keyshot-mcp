@@ -50,8 +50,9 @@ def assign_material(object_ids: List[int], material: str, duplicate: bool = True
 @mcp.tool(annotations=MODIFIE)
 def set_material_parameter(material: str, parameter: str, value: Any, node_id: Optional[int] = None) -> str:
     """Règle un paramètre d'un nœud du matériau (nœud racine par défaut ; les paramètres
-    utiles sont souvent sur le nœud de shader : voir get_material). Couleur : [r, g, b] en
-    linéaire 0-1, ou « #RRGGBB » en sRGB, converti en linéaire (l'alpha est conservé). Matrice (type 12, placage d'une
+    utiles sont souvent sur le nœud de shader : voir get_material). Couleur : [r, g, b]
+    en linéaire 0-1, ou « #RRGGBB » en sRGB, converti en linéaire ; l'alpha est
+    conservé. Matrice (type 12, placage d'une
     texture 3D) : {"scale": n ou [x,y,z], "rotate": [x,y,z] en degrés, "translate": [x,y,z]}.
     Annulable avec undo_material_changes. Sur un matériau d'origine partagé par plusieurs
     pièces, modifier une copie (assign_material) est plus sûr."""
