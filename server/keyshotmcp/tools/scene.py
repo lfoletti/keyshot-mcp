@@ -1,6 +1,6 @@
 """Outils de scène : état, arbre, pièces, capture, caméras, environnement, enregistrement."""
 import base64
-from typing import Optional
+from typing import List, Optional
 
 from mcp.server.fastmcp import Image
 
@@ -70,11 +70,21 @@ def set_camera(name: str, force: bool = False) -> str:
 
 
 @mcp.tool(annotations=MODIFIE)
-def fit_camera(name: str, node_id: int, margin: float = 1.15) -> str:
+def fit_camera(name: str, node_id: int, margin: float = 1.15, force: bool = False) -> str:
     """Crée une caméra neuve `name`, cadrée sur le nœud `node_id` (une pièce ou le modèle
     entier, ids de get_scene_tree detail=true), recule de `margin` et l'enregistre. Les
-    caméras existantes ne sont pas touchées : à préférer à un changement de cadrage manuel."""
-    return en_texte(appeler("fit_camera", {"name": name, "node_id": node_id, "margin": margin}))
+    caméras existantes ne sont pas touchées : à préférer à un changement de cadrage manuel.
+    Refusé si la vue courante n'est pas enregistrée : force=true seulement avec l'accord de
+    l'utilisateur (la vue est perdue)."""
+    return en_texte(appeler("fit_camera", {"name": name, "node_id": node_id, "margin": margin,
+                                           "force": force}))
+
+
+@mcp.tool(annotations=MODIFIE)
+def set_visibility(object_ids: List[int], visible: bool) -> str:
+    """Montre (visible=true) ou masque des pièces (ids de list_objects). Rend leur état
+    d'avant, pour pouvoir le rétablir."""
+    return en_texte(appeler("set_visibility", {"object_ids": object_ids, "visible": visible}))
 
 
 @mcp.tool(annotations=LECTURE)

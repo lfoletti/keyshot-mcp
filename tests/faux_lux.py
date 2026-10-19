@@ -29,6 +29,8 @@ class RenderOptions:
 PARAMETER_TYPE_COLOR = 13
 PARAMETER_TYPE_COLORALPHA = 14
 PARAMETER_TYPE_DOUBLE = 4
+PARAMETER_TYPE_STRING = 9
+PARAMETER_TYPE_SHADERSURFACE = 65537
 
 
 class ShaderParameter:
@@ -168,6 +170,33 @@ class SceneNode:
     def isCamera(self):
         return False
 
+    def getKind(self):
+        return FauxLux.NODE_TYPE_OBJECT if self.isObject() else FauxLux.NODE_TYPE_GROUP
+
+    def find(self, types=None, **_):
+        """Comme KeyShot : les nœuds du sous-arbre du type demandé. Un groupe sans enfant
+        (primitive NURBS) n'est pas un objet : find(NODE_TYPE_OBJECT) ne le rend pas."""
+        if self.lux.sans_find:
+            raise AttributeError("find")
+        trouves = []
+        for e in self.getChildren():
+            if types is None or e.getKind() == types:
+                trouves.append(e)
+            trouves.extend(e.find(types=types))
+        return trouves
+
+    def getPath(self, text=False):
+        def chercher(noeud, chemin):
+            if noeud is self:
+                return chemin + [noeud]
+            for e in noeud.getChildren():
+                r = chercher(e, chemin + [noeud])
+                if r:
+                    return r
+            return None
+        chemin = chercher(self.lux.arbre, []) or [self]
+        return tuple(n.getName() for n in chemin) if text else tuple(chemin)
+
     def getBoundingBox(self, world=False):
         return (0.0, 0.0, 0.0), (10.0, 40.0, 10.0)
 
@@ -181,7 +210,13 @@ class SceneNode:
         return False
 
     def isHidden(self):
-        return False
+        return getattr(self, "masque", False)
+
+    def hide(self):
+        self.masque = True
+
+    def show(self):
+        self.masque = False
 
     def getMaterial(self):
         return self.materiau
@@ -196,12 +231,38 @@ class SceneNode:
                 n += 1
             copie = "%s #%d" % (mat, n)
             source = self.lux.graphes[mat]
-            self.lux.graphes[copie] = MaterialGraph(copie, [ShaderNode(
+            nouveau = MaterialGraph(copie, [ShaderNode(
                 nd.ident + 100 * n, nd.nom, nd.genre,
                 [ShaderParameter(p.nom, p.affiche, p.genre, p.valeur) for p in nd.parametres])
                 for nd in source.noeuds])
+            # Comme KeyShot, la copie garde les branchements.
+            rang = {id(nd): k for k, nd in enumerate(source.noeuds)}
+            nouveau.aretes = [ShaderEdge(a.ident + 100 * n, nouveau.noeuds[rang[id(a.source)]],
+                                         nouveau.noeuds[rang[id(a.cible)]], a.parametre) for a in source.aretes]
+            self.lux.graphes[copie] = nouveau
             mat = copie
         self.materiau = mat
+
+
+class FausseMetadata:
+    def __init__(self, nom, champs):
+        self.nom, self.champs = nom, champs
+
+    def getFieldNames(self):
+        return list(self.champs)
+
+    def createField(self, nom, valeur, type=0):
+        if nom in self.champs:
+            raise ValueError("champ existant : %r" % nom)
+        self.champs[nom] = valeur
+
+    def updateField(self, nom, valeur):
+        if nom not in self.champs:
+            raise ValueError("champ inconnu : %r" % nom)
+        self.champs[nom] = valeur
+
+    def readField(self, nom):
+        return self.champs[nom]
 
 
 class Env:
@@ -222,9 +283,14 @@ class FauxLux:
     RenderOptions = RenderOptions
     MaterialGraph = MaterialGraph
     FOLDER_SCRIPTS = 15
+    NODE_TYPE_GROUP = 1
+    NODE_TYPE_OBJECT = 2
     PARAMETER_TYPE_COLOR = PARAMETER_TYPE_COLOR
     PARAMETER_TYPE_COLORALPHA = PARAMETER_TYPE_COLORALPHA
     PARAMETER_TYPE_DOUBLE = PARAMETER_TYPE_DOUBLE
+    PARAMETER_TYPE_STRING = PARAMETER_TYPE_STRING
+    FOLDER_TEXTURES = 4
+    FOLDER_MATERIALS = 5
 
     def __init__(self):
         self.cameras = ["last_active", "Vue 1"]
@@ -237,7 +303,19 @@ class FauxLux:
         self.en_pause = False
         self.pause_par_rendu = False
         self.vient_de_pause = False
+        # Comme KeyShot : la racine porte « surface », branchée sur le nœud de shader.
+        metal = MaterialGraph("Métal KeyShot", [
+            ShaderNode(5, "Métal KeyShot", {"name": "__root"}, [
+                ShaderParameter("surface", "Surface", PARAMETER_TYPE_SHADERSURFACE, None)]),
+            ShaderNode(6, "", {"name": "lux_metal"}, [
+                ShaderParameter("color", "Couleur", PARAMETER_TYPE_COLORALPHA, (1.0, 1.0, 1.0, 1.0)),
+                ShaderParameter("roughness", "Rugosité", PARAMETER_TYPE_DOUBLE, 0.0),
+                ShaderParameter("label", "Libellé", PARAMETER_TYPE_STRING, "")]),
+            ShaderNode(7, "", {"name": "__texture"}, [
+                ShaderParameter("texture", "Texture", PARAMETER_TYPE_STRING, "")])])
+        metal.aretes.append(ShaderEdge(900, metal.noeuds[1], metal.noeuds[0], "surface"))
         self.graphes = {
+            "Métal KeyShot": metal,
             "Plastique blanc": MaterialGraph("Plastique blanc", [ShaderNode(1, "Plastique blanc", "plastic", [
                 ShaderParameter("diffuse", "Diffuse", PARAMETER_TYPE_COLOR, (0.9, 0.9, 0.9)),
                 ShaderParameter("roughness", "Roughness", PARAMETER_TYPE_DOUBLE, 0.1)])]),
@@ -247,6 +325,10 @@ class FauxLux:
         }
         self.vue_non_enregistree = False
         self.distance = 50.0
+        self.sans_find = False
+        self.dossier_materiaux = None
+        self.cmf_en_panne = False
+        self.metadonnees = {"Plastique blanc": {"Name": "", "Notes": ""}}  # True : comme une version de KeyShot sans SceneNode.find
         o = lambda i, nom, mat: SceneNode(self, i, nom, materiau=mat)
         self.arbre = SceneNode(self, 0, "root", [
             SceneNode(self, 1, "Bouteille", [o(10, "Corps", "Plastique blanc"), o(11, "Bouchon", "Aluminium"),
@@ -355,6 +437,21 @@ class FauxLux:
         return [m for m in ("Materials/Paint/Metallic/Paint Metallic Gold #1",
                             "Materials/Glass/Glass Clear") if m.startswith(filtre)]
 
+    def saveMaterial(self, name, folder=None):
+        """Comme KeyShot 2026.2 : `folder` est ignoré, le fichier va à la racine."""
+        self._note("saveMaterial", name, folder)
+        with open(os.path.join(self.dossier_materiaux, name + ".mtl"), "wb") as f:
+            f.write(b"//--lux:mat:001--")
+        self.metadonnees.setdefault(name, {})
+
+    def findMaterialMetadata(self, name):
+        if self.cmf_en_panne or name not in self.metadonnees:
+            return None
+        return FausseMetadata(name, dict(self.metadonnees[name]))
+
+    def saveMaterialMetadata(self, md):
+        self.metadonnees[md.nom] = dict(md.champs)
+
     def getMaterialGraph(self, nom):
         return self.graphes[nom]
 
@@ -389,4 +486,8 @@ class FauxLux:
         return False
 
     def getKeyShotFolder(self, quoi):
+        if quoi == self.FOLDER_TEXTURES and getattr(self, "dossier_textures", None):
+            return self.dossier_textures
+        if quoi == self.FOLDER_MATERIALS and getattr(self, "dossier_materiaux", None):
+            return self.dossier_materiaux
         return os.getcwd()

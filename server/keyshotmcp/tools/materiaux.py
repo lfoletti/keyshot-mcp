@@ -1,5 +1,5 @@
 """Outils de matériaux : lecture, application pièce par pièce, réglages, graphe, annulation."""
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 
 from keyshotmcp.server import mcp
 from keyshotmcp.tools._commun import LECTURE, MODIFIE, appeler, en_texte
@@ -18,16 +18,17 @@ def get_material(material: str) -> str:
     valeur, et pour chaque entrée branchée l'id du nœud source (input_from). editable=true si
     c'est une copie créée par le pont (seules les copies s'éditent en graphe).
     Types utiles : 13 couleur, 14 couleur avec alpha, 4 nombre, 2 entier, 1 booléen,
-    12 matrice de placage d'une texture 3D. Couleurs en linéaire (0-1)."""
+    12 matrice de placage d'une texture 3D. Couleurs lues en linéaire (0-1)."""
     return en_texte(appeler("get_material", {"material": material}, lecture=True))
 
 
 @mcp.tool(annotations=LECTURE)
 def list_library_materials(filter: str = "", query: str = "", limit: int = 300) -> str:
     """Matériaux de la bibliothèque KeyShot (près de 1 000). filter : dossier de la
-    bibliothèque ; query : texte cherché dans le nom (insensible à la casse), filtré côté
-    serveur. Le premier appel de la session charge la bibliothèque (quelques secondes).
-    Contient notamment des matériaux OpenPBR_* (base pour un matériau OpenPBR)."""
+    bibliothèque, préfixé de « Materials/ » (« Materials/Metal », « Materials/Plastic »,
+    « Materials/Glass »…) ; sans ce préfixe, rien n'est trouvé. query : texte cherché dans le
+    nom (insensible à la casse), filtré côté serveur. Le premier appel de la session charge
+    la bibliothèque (quelques secondes)."""
     r = appeler("list_library_materials", {"filter": filter or None, "limit": 5000}, lecture=True, delai=180)
     noms = r.get("materials", [])
     if query:
@@ -50,8 +51,9 @@ def assign_material(object_ids: List[int], material: str, duplicate: bool = True
 @mcp.tool(annotations=MODIFIE)
 def set_material_parameter(material: str, parameter: str, value: Any, node_id: Optional[int] = None) -> str:
     """Règle un paramètre d'un nœud du matériau (nœud racine par défaut ; les paramètres
-    utiles sont souvent sur le nœud de shader : voir get_material). Couleur : [r, g, b] en
-    linéaire 0-1 ou « #RRGGBB » (l'alpha est conservé). Matrice (type 12, placage d'une
+    utiles sont souvent sur le nœud de shader : voir get_material). Couleur : [r, g, b]
+    en linéaire 0-1, ou « #RRGGBB » en sRGB, converti en linéaire ; l'alpha est
+    conservé. Matrice (type 12, placage d'une
     texture 3D) : {"scale": n ou [x,y,z], "rotate": [x,y,z] en degrés, "translate": [x,y,z]}.
     Annulable avec undo_material_changes. Sur un matériau d'origine partagé par plusieurs
     pièces, modifier une copie (assign_material) est plus sûr."""
@@ -109,3 +111,18 @@ def remove_material_node(material: str, node_id: int) -> str:
 def rename_material(material: str, new_name: str) -> str:
     """Renomme une copie créée par le pont."""
     return en_texte(appeler("rename_material", {"material": material, "new_name": new_name}))
+
+
+@mcp.tool(annotations=MODIFIE)
+def save_material_to_library(material: str, folder: str = "keyshot-mcp", cmf: Optional[Dict[str, str]] = None,
+                             overwrite: bool = False) -> str:
+    """Enregistre une copie créée par le pont dans la bibliothèque de matériaux de KeyShot,
+    sous Materials/<folder>/ (sous-dossier relatif, sans « .. »), pour la réutiliser dans
+    d'autres scènes. cmf : champs CMF de KeyShot, p. ex. {"Name": "CMF-01", "Color": "RAL 7016",
+    "Finish": "Microbillé", "Material": "Aluminium anodisé", "Vendor": "...", "Notes": "..."} ;
+    la réponse les rend tels que KeyShot les a gardés. Nommer d'abord la copie
+    (rename_material) : le nom devient celui du matériau en bibliothèque. Refusé si le
+    matériau existe déjà dans ce dossier, sauf overwrite=true (seulement avec l'accord de
+    l'utilisateur)."""
+    return en_texte(appeler("save_material_to_library", {"material": material, "folder": folder,
+                                                          "cmf": cmf, "overwrite": overwrite}))

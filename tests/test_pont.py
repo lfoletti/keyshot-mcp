@@ -22,7 +22,7 @@ import unittest
 from ctypes import wintypes
 
 import client_pont
-from faux_lux import FauxLux
+from faux_lux import FauxLux, SceneNode
 
 ICI = os.path.dirname(os.path.abspath(__file__))
 CHEMIN_PONT = os.path.join(ICI, "..", "addin", "Scripts", "MCP start.py")
@@ -418,7 +418,9 @@ class TestOutils(unittest.TestCase):
                            {"material": "Plastique blanc", "parameter": "Diffuse", "value": "#FF8000"})["result"]
         self.assertEqual(r["parameter"], "diffuse")
         self.assertEqual(r["before"], [0.9, 0.9, 0.9])
-        self.assertEqual(r["after"], [1.0, 128 / 255.0, 0.0])
+        self.assertAlmostEqual(r["after"][0], 1.0, places=9)  # #FF8000 en sRGB → linéaire
+        self.assertAlmostEqual(r["after"][1], 0.2158605, places=6)
+        self.assertAlmostEqual(r["after"][2], 0.0, places=9)
         self.b.appeler("set_material_parameter", {"material": "Aluminium", "parameter": "color", "value": [0, 0, 255]})
         self.b.appeler("set_material_parameter", {"material": "Plastique blanc", "parameter": "roughness", "value": 0.5})
         r = self.b.appeler("undo_material_changes")["result"]
@@ -428,6 +430,130 @@ class TestOutils(unittest.TestCase):
         self.assertEqual(g["Plastique blanc"].noeuds[0].parametres[1].valeur, 0.1)
         self.assertEqual(g["Aluminium"].noeuds[0].parametres[0].valeur, (0.8, 0.8, 0.8))
         self.assertEqual(r["undo_depth"], 0)
+
+    def test_couleur_hex_tres_sombre(self):
+        # Branche linéaire de la conversion sRGB (c / 12.92).
+        r = self.b.appeler("set_material_parameter",
+                           {"material": "Plastique blanc", "parameter": "diffuse", "value": "#0A0A0A"})["result"]
+        self.assertAlmostEqual(r["after"][0], 10 / 255 / 12.92, places=9)
+
+    def _copie_metal(self):
+        return self.b.appeler("assign_material", {"object_ids": [10], "material": "Métal KeyShot",
+                                                  "duplicate": True})["result"]["material"]
+
+    def test_parametre_trouve_sur_le_shader(self):
+        # Sans node_id, le paramètre absent de la racine est cherché sur le shader de « surface ».
+        copie = self._copie_metal()
+        r = self.b.appeler("set_material_parameter", {"material": copie, "parameter": "roughness",
+                                                      "value": 0.1})["result"]
+        self.assertEqual(r["after"], 0.1)
+        r = self.b.appeler("set_material_parameter", {"material": copie, "parameter": "inexistant", "value": 1})
+        self.assertEqual(r["code"], "introuvable")
+        self.assertIn("roughness", r["message"])  # la liste montre les paramètres du shader
+
+    def test_texture_dans_un_dossier_autorise(self):
+        copie = self._copie_metal()
+        dossier = tempfile.mkdtemp(prefix="textures-")
+        try:
+            self.b.lux.dossier_textures = dossier
+            image = os.path.join(dossier, "grain.png")
+            with open(image, "wb") as f:
+                f.write(b"\x89PNG")
+            r = self.b.appeler("set_material_parameter", {"material": copie, "node_id": 207,
+                                                          "parameter": "texture", "value": image})
+            self.assertEqual(r["result"]["after"], os.path.realpath(image))
+        finally:
+            shutil.rmtree(dossier, ignore_errors=True)
+
+    def test_texture_refusee(self):
+        copie = self._copie_metal()
+        ailleurs = tempfile.mkdtemp(prefix="ailleurs-")
+        try:
+            self.b.lux.dossier_textures = os.path.join(tempfile.gettempdir(), "inexistant-textures")
+            image = os.path.join(ailleurs, "x.png")
+            with open(image, "wb") as f:
+                f.write(b"\x89PNG")
+            cas = {image: "chemin_refuse", r"\\serveur\partage\x.png": "chemin_refuse",
+                   os.path.join(ailleurs, "absente.png"): "introuvable",
+                   os.path.join(ailleurs, "notes.txt"): "parametres", "relatif/x.png": "parametres"}
+            for valeur, code in cas.items():
+                r = self.b.appeler("set_material_parameter", {"material": copie, "node_id": 207,
+                                                              "parameter": "texture", "value": valeur})
+                self.assertEqual(r.get("code"), code, valeur)
+        finally:
+            shutil.rmtree(ailleurs, ignore_errors=True)
+
+    def test_enregistrer_en_bibliotheque(self):
+        copie = self._copie_metal()
+        biblio = tempfile.mkdtemp(prefix="materiaux-")
+        try:
+            self.b.lux.dossier_materiaux = biblio
+            cmf = {"Name": "CMF-01", "Finish": "Microbillé"}
+            r = self.b.appeler("save_material_to_library", {"material": copie, "folder": "keyshot-mcp-essais",
+                                                            "cmf": cmf})["result"]
+            attendu = os.path.join(biblio, "keyshot-mcp-essais", copie + ".mtl")
+            self.assertEqual(r["file"], attendu)
+            self.assertTrue(os.path.exists(attendu))
+            self.assertFalse(os.path.exists(os.path.join(biblio, copie + ".mtl")))  # déplacé
+            self.assertEqual(r["cmf"], cmf)  # relu depuis KeyShot
+            r = self.b.appeler("save_material_to_library", {"material": copie, "folder": "keyshot-mcp-essais"})
+            self.assertEqual(r["code"], "existe")
+            r = self.b.appeler("save_material_to_library", {"material": copie, "folder": "keyshot-mcp-essais",
+                                                            "overwrite": True})
+            self.assertEqual(r["status"], "success")
+        finally:
+            shutil.rmtree(biblio, ignore_errors=True)
+
+    def test_parametre_texte_ordinaire_pas_controle(self):
+        # Seul le paramètre « texture » est contrôlé comme un chemin.
+        copie = self._copie_metal()
+        r = self.b.appeler("set_material_parameter", {"material": copie, "parameter": "label",
+                                                      "value": "Réf. A/B : 12"})
+        self.assertEqual(r["status"], "success")
+
+    def test_pas_de_fichier_orphelin_si_cmf_echoue(self):
+        copie = self._copie_metal()
+        biblio = tempfile.mkdtemp(prefix="materiaux-")
+        try:
+            self.b.lux.dossier_materiaux = biblio
+            self.b.lux.cmf_en_panne = True
+            r = self.b.appeler("save_material_to_library", {"material": copie, "cmf": {"Name": "X"}})
+            self.assertEqual(r["code"], "metadonnees")
+            self.assertEqual(os.listdir(biblio), [])  # rien à la racine
+            self.b.lux.cmf_en_panne = False
+            r = self.b.appeler("save_material_to_library", {"material": copie, "cmf": {"Name": "X"}})
+            self.assertEqual(r["status"], "success")  # le nouvel essai n'est pas bloqué
+        finally:
+            shutil.rmtree(biblio, ignore_errors=True)
+
+    def test_nom_de_materiau_sans_chemin(self):
+        copie = self._copie_metal()
+        for nom in (r"..\..\x", "../x", "a/b", "C:x", "a..b", " x", ""):
+            r = self.b.appeler("rename_material", {"material": copie, "new_name": nom})
+            self.assertEqual(r["code"], "parametres", nom)
+        # Un nom ordinaire passe le contrôle (le faux lux ne sait pas renommer : autre erreur).
+        r = self.b.appeler("rename_material", {"material": copie, "new_name": "CMF-01 Alu anodisé"})
+        self.assertNotEqual(r.get("code"), "parametres")
+
+    def test_enregistrer_refuse(self):
+        biblio = tempfile.mkdtemp(prefix="materiaux-")
+        try:
+            self.b.lux.dossier_materiaux = biblio
+            # Un original de la scène, pas une copie du pont.
+            r = self.b.appeler("save_material_to_library", {"material": "Aluminium"})
+            self.assertEqual(r["code"], "original_protege")
+            copie = self._copie_metal()
+            for dossier in ("../dehors", "C:/Windows", "", "a//b"):
+                r = self.b.appeler("save_material_to_library", {"material": copie, "folder": dossier})
+                self.assertEqual(r["code"], "parametres", dossier)
+            r = self.b.appeler("save_material_to_library", {"material": copie, "cmf": {"Name": 3}})
+            self.assertEqual(r["code"], "parametres")
+            # Un matériau du même nom déjà à la racine serait écrasé par saveMaterial.
+            open(os.path.join(biblio, copie + ".mtl"), "wb").close()
+            r = self.b.appeler("save_material_to_library", {"material": copie})
+            self.assertEqual(r["code"], "existe")
+        finally:
+            shutil.rmtree(biblio, ignore_errors=True)
 
     def test_couleur_alpha_garde_l_alpha(self):
         r = self.b.appeler("set_material_parameter",
@@ -449,6 +575,25 @@ class TestOutils(unittest.TestCase):
         self.assertEqual(r["objects"][2]["path"], "Bouteille / Texte / N")
         r = self.b.appeler("list_objects", {"material": "Aluminium"})["result"]
         self.assertEqual(r["count"], 3)
+
+    def test_primitive_nurbs_vue_et_assignable(self):
+        # Primitive de KeyShot : groupe sans enfant qui porte un matériau. find(OBJECT) ne la
+        # rend pas, le parcours la trouve ; elle s'ajoute aux objets trouvés par find.
+        nurbs = SceneNode(self.b.lux, 30, "Sphere", [], "Plastique blanc")
+        self.b.lux.arbre.enfants.append(nurbs)
+        r = self.b.appeler("list_objects")["result"]
+        self.assertEqual([o["id"] for o in r["objects"]], [10, 11, 20, 21, 30])
+        self.assertEqual(r["objects"][2]["path"], "Bouteille / Texte / N")  # chemin donné par find
+        self.assertEqual(r["objects"][4]["path"], "Sphere")
+        r = self.b.appeler("assign_material", {"object_ids": [30], "material": "Aluminium",
+                                               "duplicate": True})["result"]
+        self.assertEqual(nurbs.getMaterial(), r["material"])
+
+    def test_list_objects_sans_find(self):
+        self.b.lux.sans_find = True
+        r = self.b.appeler("list_objects")["result"]
+        self.assertEqual([o["id"] for o in r["objects"]], [10, 11, 20, 21])
+        self.assertEqual(r["objects"][2]["path"], "Bouteille / Texte / N")
 
     def test_assign_et_copie_puis_annulation(self):
         # Lettrages : copie de l'aluminium recolorée, sans toucher le bouchon qui garde l'original.
@@ -564,6 +709,23 @@ class TestOutils(unittest.TestCase):
     def test_fit_camera_refuse_vue_non_enregistree(self):
         self.b.lux.vue_non_enregistree = True
         self.assertEqual(self.b.appeler("fit_camera", {"name": "X", "node_id": 1})["code"], "vue_non_enregistree")
+        r = self.b.appeler("fit_camera", {"name": "X", "node_id": 1, "force": True})
+        self.assertEqual(r["status"], "success")
+        self.assertIn("X", self.b.lux.cameras)
+
+    def test_set_visibility(self):
+        r = self.b.appeler("set_visibility", {"object_ids": [10, 11], "visible": False})["result"]
+        self.assertEqual(r["visible_before"], {"10": True, "11": True})
+        objets = {o["id"]: o for o in self.b.appeler("list_objects")["result"]["objects"]}
+        self.assertTrue(objets[10]["hidden"])
+        self.assertFalse(objets[20]["hidden"])
+        self.b.appeler("set_visibility", {"object_ids": [10], "visible": True})
+        objets = {o["id"]: o for o in self.b.appeler("list_objects")["result"]["objects"]}
+        self.assertFalse(objets[10]["hidden"])
+        self.assertEqual(self.b.appeler("set_visibility", {"object_ids": [999], "visible": False})["code"],
+                         "introuvable")
+        self.assertEqual(self.b.appeler("set_visibility", {"object_ids": [10], "visible": "false"})["code"],
+                         "parametres")
 
     def test_lux_functions(self):
         r = self.b.appeler("lux_functions", {"query": "camera"})["result"]

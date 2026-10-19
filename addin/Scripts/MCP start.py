@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # AUTHOR atelier oï
-# VERSION 0.3.1
+# VERSION 0.3.7
 # Bridge between Claude (keyshot MCP server) and this KeyShot window. Run once per session; MCP stop stops it.
 """Pont KeyShot pour le serveur MCP `keyshotmcp` (mode `timer`, B0).
 
@@ -48,7 +48,7 @@ try:
 except ImportError:
     lux = None
 
-BRIDGE_VERSION = "0.3.1"
+BRIDGE_VERSION = "0.3.7"
 NOM_MODULE = "keyshot_mcp_bridge"
 HOTE = "127.0.0.1"
 PORT = int(os.environ.get("KEYSHOT_MCP_PORT", "1998"))
@@ -188,6 +188,8 @@ class Pont:
             "disconnect_material_input": self.c_disconnect_material_input,
             "remove_material_node": self.c_remove_material_node,
             "list_objects": self.c_list_objects,
+            "set_visibility": self.c_set_visibility,
+            "save_material_to_library": self.c_save_material_to_library,
             "get_scene_tree": self.c_get_scene_tree,
             "assign_material": self.c_assign_material,
             "list_library_materials": self.c_list_library_materials,
@@ -214,7 +216,8 @@ class Pont:
         return log
 
     def _lire_config(self):
-        """pont-config.json (facultatif) : {"execute_python": bool, "dossier_sorties": chemin absolu}."""
+        """pont-config.json (facultatif) : {"execute_python": bool, "dossier_sorties": chemin absolu,
+        "dossiers_textures": [chemins absolus où les textures peuvent être lues]}."""
         try:
             with open(os.path.join(self.dossier, "pont-config.json"), encoding="utf-8") as f:
                 config = json.load(f)
@@ -234,6 +237,9 @@ class Pont:
             self.dossier_sorties = sorties
         else:
             self.dossier_sorties = self.dossier
+        textures = config.get("dossiers_textures")
+        self.dossiers_textures = ([d for d in textures if isinstance(d, str) and os.path.isabs(d)]
+                                  if isinstance(textures, list) else [])
 
     def _dossier_de(self, genre):
         """Sous-dossier de sortie (captures, rendus), créé au besoin."""
@@ -733,16 +739,18 @@ class Pont:
                 pass
         raise ErreurCommande("introuvable", "nœud inconnu : %r" % (ident,))
 
-    def c_fit_camera(self, name, node_id, margin=1.15):
+    def c_fit_camera(self, name, node_id, margin=1.15, force=False):
         """Crée une caméra neuve `name`, la cadre sur le nœud (SceneNode.centerAndFit), recule
         de `margin` et l'enregistre. Les caméras existantes ne sont pas touchées. Si le cadrage
-        déplace la géométrie au lieu de la caméra, on annule et on le signale."""
+        déplace la géométrie au lieu de la caméra, on annule et on le signale. force=true :
+        passer outre une vue courante non enregistrée (elle est perdue)."""
         lx = self._lux()
         if name in (lx.getCameras() or []):
             raise ErreurCommande("existe", "la caméra %r existe déjà" % (name,))
-        if self._appel_doux("isCameraUnsaved") is True:
+        if not force and self._appel_doux("isCameraUnsaved") is True:
             raise ErreurCommande("vue_non_enregistree",
-                                 "la vue courante a des changements non enregistrés : les enregistrer d'abord")
+                                 "la vue courante a des changements non enregistrés : les enregistrer "
+                                 "d'abord, ou force=true pour les perdre")
         noeud = self._noeud(node_id)
         bmin, bmax = noeud.getBoundingBox(True)
         avant = self._vecteur(bmin) + self._vecteur(bmax)
@@ -778,9 +786,11 @@ class Pont:
     # --- objets : lecture de l'arbre, matériau appliqué pièce par pièce, annulable ---
 
     def _objets(self):
-        """{id: (noeud, chemin)} des objets de la scène (parcours de l'arbre)."""
+        """{id: (noeud, chemin)} des pièces de la scène : les objets, et les groupes sans
+        enfant qui portent un matériau (pièce importée, primitive NURBS)."""
         lx = self._lux()
         racine = lx.getSceneTree()
+        trouves = {}
         # Recherche documentée de KeyShot : tous les objets du sous-arbre.
         type_objet = getattr(lx, "NODE_TYPE_OBJECT", None)
         if type_objet is not None and hasattr(racine, "find"):
@@ -788,17 +798,14 @@ class Pont:
                 noeuds = racine.find(types=type_objet) or []
             except Exception:
                 noeuds = []
-            if noeuds:
-                trouves = {}
-                for n in noeuds:
-                    try:
-                        chemin = tuple(n.getPath(text=True))[1:] or (n.getName(),)
-                    except Exception:
-                        chemin = (n.getName(),)
-                    trouves[n.getID()] = (n, chemin)
-                return trouves
-        # Repli : parcours à la main. On descend dans tout ce qui n'est pas un objet.
-        trouves = {}
+            for n in noeuds:
+                try:
+                    chemin = tuple(n.getPath(text=True))[1:] or (n.getName(),)
+                except Exception:
+                    chemin = (n.getName(),)
+                trouves[n.getID()] = (n, chemin)
+        # Parcours à la main, toujours : find(OBJECT) ne rend pas les groupes sans enfant
+        # (primitives Sphere, Cube… de KeyShot 2026.2, constaté le 19.10.2026).
         pile = [(racine, ())]
         while pile:
             noeud, chemin = pile.pop()
@@ -817,7 +824,7 @@ class Pont:
                 # Une pièce importée apparaît comme un groupe sans enfant qui porte un matériau
                 # (KeyShot 2026.2, scène du 16.10.2026) ; isObject() y répond False.
                 if enfant.isObject() or (not sous and self._lire(enfant.getMaterial)):
-                    trouves[enfant.getID()] = (enfant, chemin + (nom,))
+                    trouves.setdefault(enfant.getID(), (enfant, chemin + (nom,)))
                 else:
                     pile.append((enfant, chemin + (nom,)))
         return trouves
@@ -897,6 +904,26 @@ class Pont:
             self.modifs_materiaux.append({"kind": "assign", "node_id": ident, "ancien": ancien,
                                           "material": applique})
         return {"material": applique, "objects": object_ids, "undo_depth": len(self.modifs_materiaux)}
+
+    def c_set_visibility(self, object_ids, visible):
+        """Montre (visible=true) ou masque des pièces. Rend l'état d'avant pour chacune."""
+        if not isinstance(object_ids, list) or not object_ids:
+            raise ErreurCommande("parametres", "object_ids : liste d'identifiants d'objets")
+        if not isinstance(visible, bool):
+            raise ErreurCommande("parametres", "visible : true ou false")
+        objets = self._objets()
+        inconnus = [i for i in object_ids if i not in objets]
+        if inconnus:
+            raise ErreurCommande("introuvable", "objets inconnus : %s" % inconnus)
+        avant = {}
+        for ident in object_ids:
+            noeud = objets[ident][0]
+            avant[ident] = not self._lire(noeud.isHidden)
+            if visible:
+                noeud.show()
+            else:
+                noeud.hide()
+        return {"visible": bool(visible), "objects": object_ids, "visible_before": avant}
 
     def c_list_library_materials(self, filter="", limit=500):
         """Matériaux de la bibliothèque. Le premier appel de la session charge la bibliothèque
@@ -1025,8 +1052,19 @@ class Pont:
         graphe.removeNode(self._noeud_graphe(graphe, node_id))
         return {"removed": True}
 
+    @staticmethod
+    def _nom_sur(nom):
+        """Un nom de matériau sert aussi de nom de fichier (bibliothèque) : pas de séparateur
+        de chemin, de « : » ni de « .. »."""
+        if (not isinstance(nom, str) or not nom.strip() or nom != nom.strip() or ".." in nom
+                or any(c in nom for c in '/\\:*?"<>|')):
+            raise ErreurCommande("parametres", "nom de matériau refusé (sans / \\ : * ? \" < > | ni ..) : %r"
+                                 % (nom,))
+        return nom
+
     def c_rename_material(self, material, new_name):
         """Renomme une copie créée par le pont (nom porté par le nœud racine du graphe)."""
+        self._nom_sur(new_name)
         graphe = self._graphe_editable(material)
         if new_name in (self._lux().getSceneMaterials() or []):
             raise ErreurCommande("existe", "un matériau %r existe déjà dans la scène" % (new_name,))
@@ -1038,6 +1076,78 @@ class Pont:
         self.copies.discard(material)
         self.copies.add(new_name)
         return {"material": new_name, "before": material}
+
+    CHAMPS_CMF = ("Name", "Color", "Finish", "Material", "Vendor", "Notes")
+
+    def _dossier_bibliotheque(self, folder):
+        """Sous-dossier relatif de la bibliothèque de matériaux, sans remontée ni lecteur."""
+        if not isinstance(folder, str) or not folder.strip():
+            raise ErreurCommande("parametres", "folder : sous-dossier de la bibliothèque, p. ex. « keyshot-mcp »")
+        relatif = folder.strip().replace("\\", "/").strip("/")
+        if os.path.isabs(relatif) or ":" in relatif or any(p in ("", ".", "..") for p in relatif.split("/")):
+            raise ErreurCommande("parametres", "folder : chemin relatif simple attendu, sans « .. » : %r" % (folder,))
+        return relatif
+
+    def c_save_material_to_library(self, material, folder="keyshot-mcp", cmf=None, overwrite=False):
+        """Enregistre une copie créée par le pont dans la bibliothèque de matériaux, sous
+        Materials/<folder>/, puis remplit ses champs CMF (Name, Color, Finish, Material, Vendor,
+        Notes). Refusé si un matériau du même nom existe déjà dans ce dossier, sauf overwrite."""
+        lx = self._lux()
+        self._graphe_editable(material)  # seulement nos copies, présentes dans la scène
+        self._nom_sur(material)
+        relatif = self._dossier_bibliotheque(folder)
+        if cmf is not None and (not isinstance(cmf, dict)
+                                or not all(isinstance(k, str) and isinstance(v, str) for k, v in cmf.items())):
+            raise ErreurCommande("parametres", "cmf : {champ: texte}, champs %s" % ", ".join(self.CHAMPS_CMF))
+        racine = lx.getKeyShotFolder(lx.FOLDER_MATERIALS)
+        fichier = os.path.join(racine, *relatif.split("/"), material + ".mtl")
+        # KeyShot 2026.2 ignore `folder` : saveMaterial écrit toujours à la racine de la
+        # bibliothèque (constaté le 19.10.2026). On y enregistre, puis on déplace le fichier.
+        a_la_racine = os.path.join(racine, material + ".mtl")
+        base = os.path.normcase(os.path.realpath(racine))
+        for p in (fichier, a_la_racine):
+            try:
+                dedans = os.path.commonpath([base, os.path.normcase(os.path.realpath(p))]) == base
+            except ValueError:  # lecteurs différents
+                dedans = False
+            if not dedans:
+                raise ErreurCommande("chemin_refuse", "chemin hors de la bibliothèque : %s" % p)
+        if os.path.exists(a_la_racine):
+            raise ErreurCommande("existe", "un matériau %r est déjà à la racine de la bibliothèque : il serait "
+                                 "écrasé ; le renommer d'abord (rename_material)" % (material,))
+        if os.path.exists(fichier) and not overwrite:
+            raise ErreurCommande("existe", "la bibliothèque contient déjà %s : overwrite=true pour le remplacer"
+                                 % fichier)
+        if lx.saveMaterial(material) is False:
+            raise ErreurCommande("enregistrement", "saveMaterial a renvoyé False")
+        if not os.path.exists(a_la_racine):
+            raise ErreurCommande("enregistrement", "saveMaterial n'a pas écrit %s" % a_la_racine)
+        champs = {}
+        try:
+            if cmf:
+                md = lx.findMaterialMetadata(material)
+                if md is None:
+                    raise ErreurCommande("metadonnees", "métadonnées CMF introuvables après l'enregistrement")
+                existants = set(md.getFieldNames() or [])
+                for nom, valeur in cmf.items():
+                    if nom in existants:
+                        md.updateField(nom, valeur)
+                    else:
+                        md.createField(nom, valeur)
+                lx.saveMaterialMetadata(md)
+                # Relecture : ce que KeyShot a réellement gardé.
+                relu = lx.findMaterialMetadata(material)
+                champs = {nom: self._lire(lambda nom=nom: relu.readField(nom)) for nom in cmf}
+            os.makedirs(os.path.dirname(fichier), exist_ok=True)
+            os.replace(a_la_racine, fichier)
+        except Exception:
+            # Rien ne doit rester à la racine : le prochain essai serait refusé (« existe »).
+            try:
+                os.remove(a_la_racine)
+            except OSError:
+                pass
+            raise
+        return {"material": material, "library_folder": "Materials/" + relatif, "file": fichier, "cmf": champs}
 
     def c_save_scene(self, path=None, backup=True):
         """Enregistre la scène, par défaut sur son fichier actuel. Jamais sans chemin connu :
@@ -1072,28 +1182,86 @@ class Pont:
         self.modifs_materiaux = []
         return {"committed": n}
 
+    @staticmethod
+    def _chercher_parametre(noeud, parameter):
+        for p in noeud.getParameters() or []:
+            if parameter in (p.getName(), p.getDisplayName()):
+                return p
+        return None
+
     def _parametre(self, graphe, parameter, node_id):
+        """Le paramètre sur le nœud node_id ; sans node_id, sur la racine puis sur le nœud de
+        shader branché sur « surface » (où sont la couleur, la rugosité…)."""
         noeud = graphe.getRoot() if node_id is None else graphe.getNodeFromID(node_id)
         if noeud is None:
             raise ErreurCommande("introuvable", "nœud introuvable : %r" % (node_id,))
-        for p in noeud.getParameters() or []:
-            if parameter in (p.getName(), p.getDisplayName()):
-                return noeud, p
+        p = self._chercher_parametre(noeud, parameter)
+        if p is not None:
+            return noeud, p
+        if node_id is None:
+            try:
+                shader = noeud.getInputEdge("surface").getSourceNode()
+            except Exception:
+                shader = None
+            if shader is not None:
+                p = self._chercher_parametre(shader, parameter)
+                if p is not None:
+                    return shader, p
+                noeud = shader
         noms = [p.getName() for p in noeud.getParameters() or []]
         raise ErreurCommande("introuvable", "paramètre %r absent du nœud %r ; paramètres : %s"
                              % (parameter, noeud.getName(), ", ".join(noms)))
 
+    EXTENSIONS_TEXTURE = (".png", ".jpg", ".jpeg", ".tif", ".tiff", ".exr", ".hdr", ".bmp", ".tga")
+
+    def _dossiers_textures(self):
+        """Dossiers où une texture peut être lue : bibliothèque de textures de KeyShot, dossier
+        de sortie du pont, dossiers_textures de pont-config.json."""
+        lx = self._lux()
+        dossiers = [self.dossier_sorties] + list(getattr(self, "dossiers_textures", []))
+        if hasattr(lx, "FOLDER_TEXTURES"):
+            try:
+                dossiers.append(lx.getKeyShotFolder(lx.FOLDER_TEXTURES))
+            except Exception:
+                pass
+        return [os.path.realpath(d) for d in dossiers if d]
+
+    def _chemin_texture(self, valeur):
+        """Contrôle un chemin de texture avant de le donner à KeyShot : fichier image local,
+        existant, dans un dossier autorisé. Pas de chemin réseau."""
+        chemin = valeur.strip()
+        if chemin.startswith(("\\\\", "//")):
+            raise ErreurCommande("chemin_refuse", "chemin réseau refusé : %s" % chemin)
+        if not os.path.isabs(chemin):
+            raise ErreurCommande("parametres", "texture : chemin absolu attendu")
+        if os.path.splitext(chemin)[1].lower() not in self.EXTENSIONS_TEXTURE:
+            raise ErreurCommande("parametres", "texture : image attendue (%s)" % ", ".join(self.EXTENSIONS_TEXTURE))
+        reel = os.path.realpath(chemin)
+        if not os.path.isfile(reel):
+            raise ErreurCommande("introuvable", "texture introuvable : %s" % chemin)
+        for d in self._dossiers_textures():
+            try:
+                if os.path.commonpath([os.path.normcase(reel), os.path.normcase(d)]) == os.path.normcase(d):
+                    return reel  # le chemin contrôlé, pas un lien qui changerait ensuite
+            except ValueError:  # lecteurs différents
+                continue
+        raise ErreurCommande("chemin_refuse", "texture hors des dossiers autorisés (%s) : %s"
+                             % ("; ".join(self._dossiers_textures()), chemin))
+
     @staticmethod
     def _couleur(valeur):
-        """'#RRGGBB' ou [r, g, b] (0-1, ou 0-255 si une composante dépasse 1) → (r, g, b) en 0-1."""
+        """'#RRGGBB' (sRGB, converti en linéaire) ou [r, g, b] (linéaire 0-1, ou 0-255 si une
+        composante dépasse 1) → (r, g, b) en linéaire 0-1."""
         if isinstance(valeur, str):
             h = valeur.strip().lstrip("#")
             if len(h) != 6:
                 raise ErreurCommande("parametres", "couleur attendue sous la forme #RRGGBB : %r" % (valeur,))
             try:
-                return tuple(int(h[i:i + 2], 16) / 255.0 for i in (0, 2, 4))
+                srgb = [int(h[i:i + 2], 16) / 255.0 for i in (0, 2, 4)]
             except ValueError:
                 raise ErreurCommande("parametres", "couleur invalide : %r" % (valeur,))
+            # Un code hex (nuancier, RAL, Pantone, relevé sur photo) est en sRGB.
+            return tuple(c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4 for c in srgb)
         if isinstance(valeur, (list, tuple)) and len(valeur) == 3 and all(
                 isinstance(c, (int, float)) and not isinstance(c, bool) for c in valeur):
             echelle = 255.0 if any(c > 1 for c in valeur) else 1.0
@@ -1136,6 +1304,9 @@ class Pont:
         noeud, p = self._parametre(graphe, parameter, node_id)
         ancienne = p.getValue()
         nouvelle = self._couleur(value) if self._est_couleur(p) else value
+        if (p.getName() == "texture" and p.getType() == getattr(self.lux, "PARAMETER_TYPE_STRING", object())
+                and isinstance(value, str) and value.strip()):
+            nouvelle = self._chemin_texture(value)  # texture image : fichier contrôlé
         if (self._est_couleur(p) and p.getType() == getattr(self.lux, "PARAMETER_TYPE_COLORALPHA", None)
                 and isinstance(ancienne, (list, tuple)) and len(ancienne) == 4):
             nouvelle = tuple(nouvelle) + (ancienne[3],)  # couleur avec alpha : on garde l'alpha
