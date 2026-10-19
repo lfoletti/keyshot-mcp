@@ -42,7 +42,7 @@ The bridge runs inside KeyShot. The server runs in Claude Code. They speak only 
    ```
    py -3.12 -I -S run.py --check
    ```
-   The output shows `keyshot : imports ok` and 31 tools.
+   The output shows `keyshot : imports ok` and 33 tools.
 
 ## Use
 
