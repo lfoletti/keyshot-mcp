@@ -4,7 +4,7 @@ import importlib
 import pkgutil
 from pathlib import Path
 
-__version__ = "0.1.0"
+__version__ = "1.0.0"
 
 # Le serveur (mcp, connexion) avant la découverte des outils : les modules d'outils
 # importent depuis ce paquet.

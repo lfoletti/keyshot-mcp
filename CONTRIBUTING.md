@@ -46,8 +46,7 @@ Some changes need a real KeyShot, for example a new `lux` call. Do these steps:
 - Use only the Python standard library and `lux`. KeyShot does not have other packages.
 - The bridge runs on the KeyShot UI thread. Keep each command short. Do not block the thread.
 - Do not open the port to other computers. Keep `127.0.0.1` and the token.
-- If you change the bridge, increase `BRIDGE_VERSION` and the `# VERSION` line in `MCP start.py`.
-- Set `VERSION_PONT_ATTENDUE` in `server/keyshotmcp/server.py` to the same value.
+- The project has one version for the bridge, the stop script and the MCP server. See *Versions* below.
 
 ## Rules for the server
 
@@ -56,6 +55,23 @@ Some changes need a real KeyShot, for example a new `lux` call. Do these steps:
 - Give each tool one annotation: `LECTURE` (reads only), `MODIFIE` (changes the scene) or `DESTRUCTIF` (can cause loss of data).
 - Write a short and clear description for each tool. Claude reads it to select the tool.
 - Do not remove a safety check. Read the *Safety* section in [README.md](README.md).
+
+## Versions
+
+The project follows [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
+
+- MAJOR: a change that breaks existing use. Examples: a tool is removed or renamed, a parameter changes its meaning, the bridge protocol changes.
+- MINOR: a new tool, parameter or setting. Existing use does not change.
+- PATCH: a correction. The tools do not change.
+
+When you change the version, change it in these four places, with the same value:
+
+- `BRIDGE_VERSION` and the `# VERSION` line in `addin/Scripts/MCP start.py`.
+- The `# VERSION` line in `addin/Scripts/MCP stop.py`.
+- `__version__` in `server/keyshotmcp/__init__.py`.
+- `VERSION_PONT_ATTENDUE` in `server/keyshotmcp/server.py`.
+
+Then move the `[Unreleased]` section of `CHANGELOG.md` to a new section with the version and the date. After the merge, the maintainer adds the tag `vX.Y.Z` and a GitHub release.
 
 ## Pull requests
 
