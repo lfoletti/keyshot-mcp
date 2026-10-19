@@ -103,9 +103,9 @@ def main():
 
     y_pied = hauteur - haut_pied + 18
     d.line((MARGE, y_pied - 18, largeur - MARGE, y_pied - 18), fill=FILET, width=2)
-    gauche = "%s  ·  caméra « %s »  ·  rendus KeyShot %d × %d  ·  %d rendus en %.0f s  ·  %s" % (
+    gauche = m.get("pied_gauche") or "%s  ·  caméra « %s »  ·  rendus KeyShot %d × %d  ·  %d rendus en %.0f s  ·  %s" % (
         m["scene"], m["camera"], m["largeur"], m["hauteur"], n, m["duree_totale_s"], m["date"])
-    droite = "Matériaux appliqués et rendus par Claude via le pont MCP KeyShot"
+    droite = m.get("pied_droite") or "Matériaux appliqués et rendus par Claude via le pont MCP KeyShot"
     d.text((MARGE, y_pied + 10), gauche, font=petit, fill=GRIS)
     d.text((largeur - MARGE - d.textlength(droite, font=petit), y_pied + 10), droite, font=petit, fill=GRIS)
 

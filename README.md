@@ -3,12 +3,18 @@
 Control an open KeyShot Studio 2026 window from Claude Code with the Model Context Protocol (MCP).
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Tests](https://github.com/lfoletti/keyshot-mcp/actions/workflows/tests.yml/badge.svg)](https://github.com/lfoletti/keyshot-mcp/actions/workflows/tests.yml)
 
-```
-Claude Code ⇄ MCP server keyshotmcp (Python 3.12, stdio)
-            ⇄ TCP 127.0.0.1:1998, 4-byte length + JSON, token
-            ⇄ MCP start.py (in KeyShot, timer on the UI thread)
-```
+![Four finish variants of a bottle, set and rendered by Claude in KeyShot](docs/finish-study.png)
+
+*Claude set the glass, label and cap materials of 4 finish variants, then made the 4 renders in 98 s.*
+
+## How it works
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/architecture-dark.svg">
+  <img alt="Claude Code talks to the keyshotmcp server on stdio. The server talks to the bridge in KeyShot on TCP 127.0.0.1:1998 with a token. The bridge writes the port and the token to pont-actif.json." src="docs/architecture-light.svg">
+</picture>
 
 The bridge runs inside KeyShot. The server runs in Claude Code. They speak only on the local computer.
 

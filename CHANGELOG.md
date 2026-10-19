@@ -18,6 +18,8 @@ The versions are the bridge versions (`BRIDGE_VERSION`).
 
 - GitHub Actions: `actions/checkout` 7.0.1 and `actions/setup-python` 7.0.0.
 - The Claude review does not run on Dependabot pull requests.
+- README: architecture diagram (light and dark) and a finish study image.
+- `composer_planche.py`: optional keys `pied_gauche` and `pied_droite` for the footer.
 
 ### Fixed
 
