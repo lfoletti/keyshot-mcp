@@ -7,6 +7,10 @@ Control an open KeyShot Studio 2026 window from Claude Code with the Model Conte
 
 > **Status: prototype.** The tools work and have tests, but the project depends on the scripting API of KeyShot, which can change. Tell us what you use and what fails: open an issue or a discussion.
 
+![Claude Code reads the KeyShot scene, changes the bottle glass three times, then undoes all the changes.](docs/demo.gif)
+
+*The demo plays 3 times faster than real time.*
+
 ```
 Claude Code ⇄ MCP server keyshotmcp (Python 3.12, stdio)
             ⇄ TCP 127.0.0.1:1998, 4-byte length + JSON, token

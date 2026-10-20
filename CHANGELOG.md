@@ -11,6 +11,7 @@ The bridge, the stop script and the MCP server have the same version.
 
 - README: status "prototype" (badge, note at the top, section *Status*).
 - Issue templates *Bug* and *Feedback*. Questions go to the Discussions, security problems to a private report.
+- README: demo GIF (`docs/demo.gif`).
 
 ## [1.0.0] - 2026-10-19
 
