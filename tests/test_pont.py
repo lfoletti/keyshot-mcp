@@ -19,13 +19,15 @@ import tempfile
 import threading
 import time
 import unittest
-from ctypes import wintypes
+if sys.platform == "win32":
+    from ctypes import wintypes
 
 import client_pont
 from faux_lux import FauxLux, SceneNode
 
 ICI = os.path.dirname(os.path.abspath(__file__))
-CHEMIN_PONT = os.path.join(ICI, "..", "addin", "Scripts", "MCP start.py")
+# KEYSHOT_MCP_PONT : un autre fichier de pont, p. ex. une copie mutée par mutations_pont.py.
+CHEMIN_PONT = os.environ.get("KEYSHOT_MCP_PONT") or os.path.join(ICI, "..", "addin", "Scripts", "MCP start.py")
 
 
 def charger_pont():
@@ -49,11 +51,18 @@ class Banc:
         self.pont.demarrer()
         self.sock = self.connecter()
         self.tampon = bytearray()
+        self.octets_envoyes = 0
 
     def connecter(self):
         s = socket.create_connection(("127.0.0.1", self.pont.port), timeout=2)
         s.setblocking(False)
-        self.pont.tick()  # acceptation
+        # Acceptation. Hors Windows, connect() revient parfois avant que la connexion soit dans la
+        # file d'acceptation du pont : on bat jusqu'à ce que le pont tienne le client.
+        fin = time.time() + 1.0
+        self.pont.tick()
+        while self.pont.client is None and time.time() < fin:
+            time.sleep(0.002)
+            self.pont.tick()
         return s
 
     def envoyer(self, commande, params=None, jeton=True, id=None):
@@ -64,9 +73,11 @@ class Banc:
             requete["token"] = jeton
         if id is not None:
             requete["id"] = id
+        octets = client_pont.trame(requete)
         self.sock.setblocking(True)
-        self.sock.sendall(client_pont.trame(requete))
+        self.sock.sendall(octets)
         self.sock.setblocking(False)
+        self.octets_envoyes += len(octets)
 
     def _trame(self):
         if len(self.tampon) < 4:
@@ -182,6 +193,10 @@ class TestProtocole(unittest.TestCase):
     def test_une_commande_par_battement(self):
         for i in range(3):
             self.b.envoyer("ping", id=i)
+        fin = time.time() + 1.0  # hors Windows, les trames mettent quelques ms à arriver
+        while len(self.b.pont.entree) < self.b.octets_envoyes and time.time() < fin:
+            self.b.pont._servir_client()
+            time.sleep(0.002)
         self.b.pont.tick()
         self.b.pont.tick()
         self.assertEqual(self.b.pont.compteurs["commandes"], 2)
@@ -197,8 +212,33 @@ class TestProtocole(unittest.TestCase):
 
     def test_reconnexion_apres_fermeture(self):
         self.b.sock.close()
-        self.b.pont.tick()
+        fin = time.time() + 1.0  # le FIN met quelques ms à arriver hors Windows
+        while self.b.pont.client is not None and time.time() < fin:
+            self.b.pont.tick()
+            time.sleep(0.005)
         self.assertIsNone(self.b.pont.client)
+        self.b.sock = self.b.connecter()
+        self.assertEqual(self.b.appeler("ping")["status"], "success")
+
+    def test_pair_hors_loopback_refuse(self):
+        """Pair d'une autre adresse que 127.0.0.1 : fermé sans réponse, jamais pris comme client."""
+        self.b.sock.close()
+        fin = time.time() + 1.0
+        while self.b.pont.client is not None and time.time() < fin:
+            self.b.pont.tick()
+            time.sleep(0.005)
+        self.assertIsNone(self.b.pont.client)
+        cote_pont, cote_pair = socket.socketpair()
+        ecoute = self.b.pont.ecoute
+        self.b.pont.ecoute = type("FausseEcoute", (), {"accept": lambda _: (cote_pont, ("192.168.1.20", 50000))})()
+        try:
+            self.b.pont.tick()
+        finally:
+            self.b.pont.ecoute = ecoute
+        self.assertIsNone(self.b.pont.client)
+        cote_pair.settimeout(1.0)
+        self.assertEqual(cote_pair.recv(64), b"")  # fermé, sans trame
+        cote_pair.close()
         self.b.sock = self.b.connecter()
         self.assertEqual(self.b.appeler("ping")["status"], "success")
 
@@ -555,6 +595,25 @@ class TestOutils(unittest.TestCase):
         finally:
             shutil.rmtree(biblio, ignore_errors=True)
 
+    def test_enregistrer_refuse_lien_hors_bibliotheque(self):
+        """Le nom et le dossier passent les contrôles de forme, mais le dossier est un lien vers
+        l'extérieur de la bibliothèque : le chemin réel est refusé, rien n'est écrit dehors."""
+        biblio = tempfile.mkdtemp(prefix="materiaux-")
+        dehors = tempfile.mkdtemp(prefix="dehors-")
+        try:
+            try:
+                os.symlink(dehors, os.path.join(biblio, "lien"), target_is_directory=True)
+            except (OSError, NotImplementedError):
+                self.skipTest("liens symboliques indisponibles ici")
+            self.b.lux.dossier_materiaux = biblio
+            copie = self._copie_metal()
+            r = self.b.appeler("save_material_to_library", {"material": copie, "folder": "lien"})
+            self.assertEqual(r.get("code"), "chemin_refuse", r)
+            self.assertEqual(os.listdir(dehors), [])
+        finally:
+            shutil.rmtree(biblio, ignore_errors=True)
+            shutil.rmtree(dehors, ignore_errors=True)
+
     def test_couleur_alpha_garde_l_alpha(self):
         r = self.b.appeler("set_material_parameter",
                            {"material": "Aluminium", "parameter": "base", "value": [0.5, 0.4, 0.1]})["result"]
@@ -898,7 +957,7 @@ class TestDemarrage(unittest.TestCase):
             with open(os.path.join(dossier, "pont-config.json"), "w", encoding="utf-8") as f:
                 json.dump({"dossier_sorties": sorties}, f)
             b = Banc.__new__(Banc)
-            b.dossier, b.lux, b.tampon = dossier, FauxLux(), bytearray()
+            b.dossier, b.lux, b.tampon, b.octets_envoyes = dossier, FauxLux(), bytearray(), 0
             b.pont = P.Pont(b.lux, port=0, dossier=dossier, pompe=False)
             b.pont.DELAI_STABLE_S = 0.0
             b.pont.demarrer()
@@ -926,6 +985,7 @@ class TestDemarrage(unittest.TestCase):
             shutil.rmtree(dossier, ignore_errors=True)
 
 
+@unittest.skipUnless(sys.platform == "win32", "SetTimer : minuterie Windows")
 class TestVraieMinuterie(unittest.TestCase):
     """SetTimer réel, messages pompés sur ce thread comme le fait la boucle Qt de KeyShot."""
 
