@@ -65,6 +65,5 @@ class Registre(unittest.TestCase):
         self.assertIn(f"](https://pypi.org/project/{nom_du_paquet()}/)", texte("README.md"))
 
 
-
 if __name__ == "__main__":
     unittest.main()
