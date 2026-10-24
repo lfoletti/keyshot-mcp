@@ -7,6 +7,8 @@ The bridge, the stop script and the MCP server have the same version.
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-10-24
+
 ### Changed
 
 - README: all links are absolute, so they work on the PyPI page too (the demo GIF, the licence, CONTRIBUTING, the code of conduct). A PyPI badge. `tests/test_publication.py` refuses a relative link in the README.
@@ -91,7 +93,8 @@ First public version.
 - The tools edit a material graph only on copies that the bridge made.
 - `save_scene` keeps a copy of the old `.bip` file.
 
-[Unreleased]: https://github.com/lfoletti/keyshot-mcp/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/lfoletti/keyshot-mcp/compare/v1.1.1...HEAD
+[1.1.1]: https://github.com/lfoletti/keyshot-mcp/releases/tag/v1.1.1
 [1.1.0]: https://github.com/lfoletti/keyshot-mcp/releases/tag/v1.1.0
 [1.0.0]: https://github.com/lfoletti/keyshot-mcp/releases/tag/v1.0.0
 [0.3.1]: https://github.com/lfoletti/keyshot-mcp/commit/bb801b8

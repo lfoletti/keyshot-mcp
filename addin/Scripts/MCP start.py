@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # AUTHOR atelier oï
-# VERSION 1.1.0
+# VERSION 1.1.1
 # Bridge between Claude (keyshot MCP server) and this KeyShot window. Run once per session; MCP stop stops it.
 """Pont KeyShot pour le serveur MCP `keyshotmcp` (mode `timer`, B0).
 
@@ -48,7 +48,7 @@ try:
 except ImportError:
     lux = None
 
-BRIDGE_VERSION = "1.1.0"
+BRIDGE_VERSION = "1.1.1"
 NOM_MODULE = "keyshot_mcp_bridge"
 HOTE = "127.0.0.1"
 PORT = int(os.environ.get("KEYSHOT_MCP_PORT", "1998"))
