@@ -114,7 +114,7 @@ class InstallAddin(unittest.TestCase):
 
     def test_un_lien_a_la_place_d_un_script_est_refuse(self):
         ailleurs = os.path.join(self.tmp, "ailleurs.py")
-        with open(ailleurs, "w") as f:
+        with open(ailleurs, "w", newline="") as f:
             f.write("# hors du dossier Scripts\n")
         try:
             os.symlink(ailleurs, os.path.join(self.cible, NOMS[0]))
@@ -156,7 +156,7 @@ class InstallAddin(unittest.TestCase):
                         ignore=shutil.ignore_patterns("__pycache__"))
         os.mkdir(os.path.join(paquet, "keyshotmcp", "addin"))
         for nom in NOMS:
-            with open(os.path.join(paquet, "keyshotmcp", "addin", nom), "w") as f:
+            with open(os.path.join(paquet, "keyshotmcp", "addin", nom), "w", newline="") as f:
                 f.write(f"# copie du paquet : {nom}\n")
         r = keyshot_mcp("install-addin", "--dir", self.cible, paquet=paquet)
         self.assertEqual(r.returncode, 0, r.stderr)
