@@ -20,6 +20,10 @@ def texte(*chemin):
         return f.read()
 
 
+def nom_du_paquet():
+    return re.search(r'^name = "(.+)"$', texte("pyproject.toml"), re.M)[1]
+
+
 def version_du_paquet():
     return re.search(r'^__version__ = "(.+)"$', texte("server", "keyshotmcp", "__init__.py"), re.M)[1]
 
@@ -42,13 +46,24 @@ class Registre(unittest.TestCase):
 
     def test_le_paquet_est_celui_de_pypi_sur_stdio(self):
         paquet, = self.serveur["packages"]
-        nom = re.search(r'^name = "(.+)"$', texte("pyproject.toml"), re.M)[1]
         self.assertEqual((paquet["registryType"], paquet["identifier"], paquet["transport"]),
-                         ("pypi", nom, {"type": "stdio"}))
+                         ("pypi", nom_du_paquet(), {"type": "stdio"}))
 
     def test_le_readme_porte_le_nom_du_registre(self):
         # Le registre lit le README publié sur PyPI ; le nom doit finir sur une limite.
         self.assertRegex(texte("README.md"), re.escape(f"mcp-name: {NOM_REGISTRE}") + r"(\s|-->|<)")
+
+    def test_les_liens_du_readme_sont_absolus(self):
+        # PyPI affiche le README hors du dépôt : un lien relatif (fichier, image, ancre) y est cassé.
+        cibles = re.findall(r"\]\(([^)\s]+)", texte("README.md"))
+        cibles += re.findall(r'(?:src|href)="([^"]+)"', texte("README.md"))
+        self.assertTrue(cibles)
+        relatifs = [c for c in cibles if not c.startswith("https://")]
+        self.assertEqual(relatifs, [])
+
+    def test_le_readme_renvoie_au_paquet_pypi(self):
+        self.assertIn(f"](https://pypi.org/project/{nom_du_paquet()}/)", texte("README.md"))
+
 
 
 if __name__ == "__main__":

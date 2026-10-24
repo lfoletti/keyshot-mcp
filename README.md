@@ -4,14 +4,15 @@
 
 Control an open KeyShot Studio 2026 window from Claude Code with the Model Context Protocol (MCP).
 
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Status: prototype](https://img.shields.io/badge/status-prototype-orange.svg)](#status)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/lfoletti/keyshot-mcp/blob/main/LICENSE)
+[![Status: prototype](https://img.shields.io/badge/status-prototype-orange.svg)](https://github.com/lfoletti/keyshot-mcp#status)
 [![Tests](https://github.com/lfoletti/keyshot-mcp/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/lfoletti/keyshot-mcp/actions/workflows/tests.yml)
 [![Release](https://img.shields.io/github/v/release/lfoletti/keyshot-mcp)](https://github.com/lfoletti/keyshot-mcp/releases)
+[![PyPI](https://img.shields.io/pypi/v/keyshot-mcp)](https://pypi.org/project/keyshot-mcp/)
 
 > **Status: prototype.** The tools work and have tests, but the project depends on the scripting API of KeyShot, which can change. Tell us what you use and what fails: open an issue or a discussion.
 
-![Claude Code reads the KeyShot scene, changes the bottle glass three times, then undoes all the changes.](docs/demo.gif)
+![Claude Code reads the KeyShot scene, changes the bottle glass three times, then undoes all the changes.](https://raw.githubusercontent.com/lfoletti/keyshot-mcp/main/docs/demo.gif)
 
 *The demo plays 3 times faster than real time.*
 
@@ -156,7 +157,7 @@ py -3.13 test_serveur_mcp.py
 
 ## Contribute
 
-Read [CONTRIBUTING.md](CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
+Read [CONTRIBUTING.md](https://github.com/lfoletti/keyshot-mcp/blob/main/CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](https://github.com/lfoletti/keyshot-mcp/blob/main/CODE_OF_CONDUCT.md).
 
 ## Status
 

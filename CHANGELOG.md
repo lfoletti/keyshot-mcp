@@ -7,6 +7,10 @@ The bridge, the stop script and the MCP server have the same version.
 
 ## [Unreleased]
 
+### Changed
+
+- README: all links are absolute, so they work on the PyPI page too (the demo GIF, the licence, CONTRIBUTING, the code of conduct). A PyPI badge. `tests/test_publication.py` refuses a relative link in the README.
+
 ## [1.1.0] - 2026-10-24
 
 ### Added
