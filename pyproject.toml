@@ -11,7 +11,7 @@ license = "MIT"
 license-files = ["LICENSE"]
 authors = [{ name = "Lauro Foletti" }]
 requires-python = ">=3.12"
-dependencies = ["mcp==1.28.1"]
+dependencies = ["mcp==1.30.0"]
 keywords = ["keyshot", "mcp", "model-context-protocol", "claude-code", "3d-rendering"]
 classifiers = [
     "Development Status :: 4 - Beta",
