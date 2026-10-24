@@ -35,3 +35,36 @@ jobs:
       - name: End-to-end tests
         working-directory: tests
         run: python test_serveur_mcp.py
+
+      - name: Command tests
+        working-directory: tests
+        run: python test_cli.py
+
+  package:
+    # The PyPI package: build it, install it in a clean environment, run the command.
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Build
+        run: |
+          python -m pip install build==1.3.0
+          python -m build
+
+      - name: Install the wheel and run keyshot-mcp
+        shell: bash
+        run: |
+          python -m venv venv
+          venv/Scripts/python -m pip install dist/*.whl
+          venv/Scripts/keyshot-mcp --version
+          mkdir scripts
+          venv/Scripts/keyshot-mcp install-addin --dir scripts
+          cmp "scripts/MCP start.py" "addin/Scripts/MCP start.py"
+          cmp "scripts/MCP stop.py" "addin/Scripts/MCP stop.py"

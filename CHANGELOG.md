@@ -15,6 +15,8 @@ The bridge, the stop script and the MCP server have the same version.
 - `tests/mutations_pont.py`: disables each safety rule of the bridge in a temporary copy and checks that a test fails.
 - Tests for two safety rules that no test covered: a peer that is not `127.0.0.1` is closed without a reply; a library folder that is a link outside the library is refused.
 - README: demo GIF (`docs/demo.gif`).
+- A Python package for PyPI (`pyproject.toml`), with the command `keyshot-mcp`: without argument it starts the MCP server, `install-addin [--dir D]` copies the bridge scripts into the KeyShot Scripts folder (installed, updated or unchanged), `--version` prints the version. `run.py` and the release zip do not change.
+- GitHub Actions: the package is built, installed in a clean environment and run on Windows. On a tag, the sdist and the wheel go to the release, and to PyPI when the variable `PYPI_PUBLISH` is `true`.
 
 ### Changed
 

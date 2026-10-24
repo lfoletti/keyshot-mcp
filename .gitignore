@@ -13,3 +13,6 @@ phase2/
 PREPARATION-MATERIAUX.md
 dev-plugin/
 .attic/
+dist/
+build/
+*.egg-info/
