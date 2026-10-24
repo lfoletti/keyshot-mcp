@@ -29,6 +29,7 @@ py -3.13 test_serveur_mcp.py
 py -3.13 test_cli.py
 py -3.13 test_publication.py
 py -3.13 test_plugin.py
+py -3.13 test_dev_version.py
 ```
 
 All the tests must pass.
@@ -93,6 +94,8 @@ When you change the version, change it in these places, with the same value:
 - `VERSION_PONT_ATTENDUE` in `server/keyshotmcp/server.py`.
 - `version` and `packages[0].version` in `server.json`. `tests/test_publication.py` checks them.
 - `version` in `plugin/.claude-plugin/plugin.json`, the `uvx` argument in `plugin/.mcp.json` and in `plugin/commands/keyshot-install-addin.md`. `tests/test_plugin.py` checks them.
+
+Before the first publication of a version to PyPI, run the workflow *TestPyPI* (Actions > TestPyPI > Run workflow). It publishes `X.Y.Z.dev<run id>` to test.pypi.org, then installs it from there on Windows and runs it. A version number on PyPI serves only once, so a packaging error found there costs nothing.
 
 Then move the `[Unreleased]` section of `CHANGELOG.md` to a new section with the version and the date. After the merge, the maintainer adds the tag `vX.Y.Z` and a GitHub release.
 

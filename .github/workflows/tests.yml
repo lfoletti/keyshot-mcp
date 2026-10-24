@@ -48,6 +48,10 @@ jobs:
         working-directory: tests
         run: python test_plugin.py
 
+      - name: Rehearsal version tool
+        working-directory: tests
+        run: python test_dev_version.py
+
   package:
     # The PyPI package: build it, install it in a clean environment, run the command.
     runs-on: windows-latest
