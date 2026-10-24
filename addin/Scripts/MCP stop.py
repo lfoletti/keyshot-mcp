@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # AUTHOR atelier oï
-# VERSION 1.0.0
+# VERSION 1.1.0
 # Stops the Claude bridge (MCP start): timer off, port closed, token removed.
 """Arrêt du pont KeyShot (« STOP CLAUDE »). Sans effet si aucun pont ne tourne."""
 import sys
