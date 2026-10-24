@@ -59,8 +59,22 @@ def install_addin(dossier: Optional[str]) -> int:
         print(f"keyshot-mcp: {cible} does not exist; install KeyShot Studio, "
               "or give the Scripts folder with --dir", file=sys.stderr)
         return 2
+    source = scripts_source()
+    absents = [nom for nom in SCRIPTS_DU_PONT if not (source / nom).is_file()]
+    if absents:
+        print(f"keyshot-mcp: bridge scripts not found in {source}: {', '.join(absents)}",
+              file=sys.stderr)
+        return 1
+    # Tout est contrôlé avant la première lecture et la première copie : rien n'est
+    # lu ni écrit à travers un lien ou un dossier.
+    for nom in SCRIPTS_DU_PONT:
+        dst = cible / nom
+        if dst.is_symlink() or (dst.exists() and not dst.is_file()):
+            print(f"keyshot-mcp: {dst} is not a regular file; remove it, then try again",
+                  file=sys.stderr)
+            return 1
     changement = False
-    for etat, src, dst in plan(scripts_source(), cible):
+    for etat, src, dst in plan(source, cible):
         if etat != "unchanged":
             shutil.copyfile(src, dst)
             changement = True

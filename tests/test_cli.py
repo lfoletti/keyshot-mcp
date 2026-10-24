@@ -20,10 +20,29 @@ SCRIPTS = os.path.join(PROJET, "addin", "Scripts")
 NOMS = ["MCP start.py", "MCP stop.py"]
 
 
+# Le chemin comme run.py : server/ (ou un autre paquet) et libs/ en tête, puis les dossiers
+# de pywin32, que mcp importe sous Windows et que -S ne lit plus dans pywin32.pth.
+LANCEUR = r"""
+import os, sys
+paquet, libs = sys.argv[1], sys.argv[2]
+sys.path[:0] = [paquet, libs]
+if sys.platform == "win32":
+    try:
+        import pywintypes
+    except ImportError:
+        sys.path[2:2] = [os.path.join(libs, "win32"), os.path.join(libs, "win32", "lib"),
+                         os.path.join(libs, "pythonwin")]
+        dlls = os.path.join(libs, "pywin32_system32")
+        if os.path.isdir(dlls):
+            os.add_dll_directory(dlls)
+from keyshotmcp.cli import main
+sys.exit(main(sys.argv[3:]))
+"""
+
+
 def keyshot_mcp(*args, env=None, paquet=None):
     """Lance main(args) de keyshotmcp.cli. paquet : un dossier qui remplace server/."""
-    code = ("import sys; sys.path[:0] = [sys.argv[1], sys.argv[2]]; "
-            "from keyshotmcp.cli import main; sys.exit(main(sys.argv[3:]))")
+    code = LANCEUR
     chemin_paquet = paquet or os.path.join(PROJET, "server")
     tout_env = dict(os.environ)
     tout_env.pop("PUBLIC", None)
@@ -81,6 +100,40 @@ class InstallAddin(unittest.TestCase):
         self.assertIn("does not exist", r.stderr)
         self.assertFalse(os.path.exists(absent))
 
+    def test_des_scripts_source_absents_sont_refuses_sans_trace(self):
+        # Un paquet sans keyshotmcp/addin/ et sans dépôt autour : aucune source.
+        paquet = os.path.join(self.tmp, "site")
+        shutil.copytree(os.path.join(PROJET, "server", "keyshotmcp"),
+                        os.path.join(paquet, "keyshotmcp"),
+                        ignore=shutil.ignore_patterns("__pycache__"))
+        r = keyshot_mcp("install-addin", "--dir", self.cible, paquet=paquet)
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("bridge scripts not found", r.stderr)
+        self.assertNotIn("Traceback", r.stderr)
+        self.assertEqual(os.listdir(self.cible), [])
+
+    def test_un_lien_a_la_place_d_un_script_est_refuse(self):
+        ailleurs = os.path.join(self.tmp, "ailleurs.py")
+        with open(ailleurs, "w") as f:
+            f.write("# hors du dossier Scripts\n")
+        try:
+            os.symlink(ailleurs, os.path.join(self.cible, NOMS[0]))
+        except (OSError, NotImplementedError):
+            self.skipTest("pas de lien symbolique sur ce système")
+        r = keyshot_mcp("install-addin", "--dir", self.cible)
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("not a regular file", r.stderr)
+        self.assertEqual(lire(ailleurs), b"# hors du dossier Scripts\n")
+        self.assertFalse(os.path.exists(os.path.join(self.cible, NOMS[1])))
+
+    def test_un_dossier_a_la_place_d_un_script_est_refuse(self):
+        os.mkdir(os.path.join(self.cible, NOMS[0]))
+        r = keyshot_mcp("install-addin", "--dir", self.cible)
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("not a regular file", r.stderr)
+        self.assertNotIn("Traceback", r.stderr)
+        self.assertFalse(os.path.exists(os.path.join(self.cible, NOMS[1])))
+
     def test_le_dossier_par_defaut_est_celui_de_keyshot_sous_public(self):
         public = os.path.join(self.tmp, "Public")
         scripts = os.path.join(public, "Documents", "KeyShot Studio", "Scripts")
@@ -127,8 +180,7 @@ class Commande(unittest.TestCase):
         self.assertIn("usage", r.stderr)
 
     def test_sans_argument_le_serveur_repond_sur_stdio(self):
-        code = ("import sys; sys.path[:0] = [sys.argv[1], sys.argv[2]]; "
-                "from keyshotmcp.cli import main; sys.exit(main([]))")
+        code = LANCEUR
         init = ('{"jsonrpc":"2.0","id":1,"method":"initialize","params":'
                 '{"protocolVersion":"2025-06-18","capabilities":{},'
                 '"clientInfo":{"name":"test","version":"0"}}}\n')
