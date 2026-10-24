@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "keyshot": {
+      "command": "uvx",
+      "args": ["keyshot-mcp==1.0.0"]
+    }
+  }
+}

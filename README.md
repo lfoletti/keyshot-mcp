@@ -1,5 +1,7 @@
 # keyshot-mcp
 
+<!-- mcp-name: io.github.lfoletti/keyshot-mcp -->
+
 Control an open KeyShot Studio 2026 window from Claude Code with the Model Context Protocol (MCP).
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -42,6 +44,17 @@ claude mcp add keyshot -- uvx keyshot-mcp
 ```
 
 `install-addin` copies the two bridge scripts into `%PUBLIC%\Documents\KeyShot Studio\Scripts` (or the folder of `--dir`). Then restart KeyShot.
+
+### As a Claude Code plugin
+
+From version 1.1.0, this repository is also a Claude Code marketplace. The plugin `keyshot` starts the server with `uvx`, so [uv](https://docs.astral.sh/uv/) must be installed.
+
+```
+/plugin marketplace add lfoletti/keyshot-mcp
+/plugin install keyshot@keyshot-mcp
+```
+
+Then run `/keyshot-install-addin` once, and restart KeyShot.
 
 ### From the release zip or the repository
 

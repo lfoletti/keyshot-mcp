@@ -16,6 +16,8 @@ The bridge, the stop script and the MCP server have the same version.
 - Tests for two safety rules that no test covered: a peer that is not `127.0.0.1` is closed without a reply; a library folder that is a link outside the library is refused.
 - README: demo GIF (`docs/demo.gif`).
 - A Python package for PyPI (`pyproject.toml`), with the command `keyshot-mcp`: without argument it starts the MCP server, `install-addin [--dir D]` copies the bridge scripts into the KeyShot Scripts folder (installed, updated or unchanged), `--version` prints the version. `run.py` and the release zip do not change.
+- Claude Code plugin `keyshot` in `plugin/`, with the marketplace `.claude-plugin/marketplace.json`: the server through `uvx keyshot-mcp==<version>`, and the command `/keyshot-install-addin`. `tests/test_plugin.py` checks that the plugin, the server and the command use the version of the package.
+- `server.json` for the MCP registry (`io.github.lfoletti/keyshot-mcp`), and the line `mcp-name` in the README. After the publication to PyPI, the release workflow publishes `server.json` to the registry. `tests/test_publication.py` checks the name, the description length, the versions and the PyPI package.
 - GitHub Actions: the package is built, installed in a clean environment and run on Windows. On a tag, the sdist and the wheel go to the release, and to PyPI when the variable `PYPI_PUBLISH` is `true`.
 
 ### Changed

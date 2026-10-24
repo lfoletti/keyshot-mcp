@@ -135,3 +135,32 @@ jobs:
           path: dist/
 
       - uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
+
+  mcp-registry:
+    # server.json goes to the MCP registry after the package is on PyPI. The
+    # registry checks the line mcp-name in the README of the PyPI package, and
+    # the GitHub OIDC token proves the namespace io.github.lfoletti.
+    needs: pypi
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || '' }}
+          persist-credentials: false
+
+      - name: Install mcp-publisher v1.8.4
+        run: |
+          base=https://github.com/modelcontextprotocol/registry/releases/download/v1.8.4
+          curl -fsSLO "$base/mcp-publisher_linux_amd64.tar.gz"
+          curl -fsSLO "$base/registry_1.8.4_checksums.txt"
+          grep ' mcp-publisher_linux_amd64.tar.gz$' registry_1.8.4_checksums.txt | sha256sum -c
+          tar xzf mcp-publisher_linux_amd64.tar.gz mcp-publisher
+
+      - name: Publish server.json
+        run: |
+          ./mcp-publisher login github-oidc
+          ./mcp-publisher publish
