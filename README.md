@@ -32,6 +32,19 @@ The bridge runs inside KeyShot. The server runs in Claude Code. They speak only 
 
 ## Install
 
+### From PyPI
+
+From version 1.1.0, `keyshot-mcp` is a Python package. With [uv](https://docs.astral.sh/uv/):
+
+```
+uvx keyshot-mcp install-addin
+claude mcp add keyshot -- uvx keyshot-mcp
+```
+
+`install-addin` copies the two bridge scripts into `%PUBLIC%\Documents\KeyShot Studio\Scripts` (or the folder of `--dir`). Then restart KeyShot.
+
+### From the release zip or the repository
+
 Each release has `keyshot-mcp-<version>-windows.zip`, with `libs/` already filled. Unzip it, then go to step 3. Without the zip, start at step 1.
 
 1. Clone the repository:

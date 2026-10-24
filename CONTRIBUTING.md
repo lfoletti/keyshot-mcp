@@ -26,6 +26,7 @@ Run all the tests before you send a pull request:
 cd tests
 py -3.13 test_pont.py
 py -3.13 test_serveur_mcp.py
+py -3.13 test_cli.py
 ```
 
 All the tests must pass.

@@ -1,0 +1,43 @@
+[build-system]
+requires = ["hatchling==1.27.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "keyshot-mcp"
+dynamic = ["version"]
+description = "MCP server: control KeyShot Studio from Claude Code (scene, cameras, materials from a CMF sheet, renders)"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Lauro Foletti" }]
+requires-python = ">=3.12"
+dependencies = ["mcp==1.28.1"]
+keywords = ["keyshot", "mcp", "model-context-protocol", "claude-code", "3d-rendering"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Operating System :: Microsoft :: Windows",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Multimedia :: Graphics :: 3D Rendering",
+]
+
+[project.urls]
+Homepage = "https://github.com/lfoletti/keyshot-mcp"
+Issues = "https://github.com/lfoletti/keyshot-mcp/issues"
+Changelog = "https://github.com/lfoletti/keyshot-mcp/blob/main/CHANGELOG.md"
+
+[project.scripts]
+keyshot-mcp = "keyshotmcp.cli:main"
+
+[tool.hatch.version]
+path = "server/keyshotmcp/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["server/keyshotmcp"]
+
+# The bridge scripts go into the package, so that keyshot-mcp install-addin finds them.
+[tool.hatch.build.targets.wheel.force-include]
+"addin/Scripts/MCP start.py" = "keyshotmcp/addin/MCP start.py"
+"addin/Scripts/MCP stop.py" = "keyshotmcp/addin/MCP stop.py"
+
+[tool.hatch.build.targets.sdist]
+include = ["server/keyshotmcp", "addin/Scripts/*.py", "README.md", "LICENSE", "CHANGELOG.md"]
