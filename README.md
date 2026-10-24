@@ -30,7 +30,7 @@ The bridge runs inside KeyShot. The server runs in Claude Code. They speak only 
 |---|---|
 | KeyShot Studio | 15.1 (2026) or later. Tested with 2026.2 Pro (15.1.2.7). |
 | Python | 3.12 or later, Windows |
-| `mcp` | 1.28.1 |
+| `mcp` | 1.30.0 |
 | Claude Code | any recent version |
 
 ## Install
@@ -67,7 +67,7 @@ Each release has `keyshot-mcp-<version>-windows.zip`, with `libs/` already fille
    ```
 2. Install `mcp` in the `libs` folder. `run.py` loads it from there.
    ```
-   py -3.12 -m pip install --target libs mcp==1.28.1
+   py -3.12 -m pip install --target libs mcp==1.30.0
    ```
 3. Copy `addin\Scripts\MCP start.py` and `MCP stop.py` to
    `C:\Users\Public\Documents\KeyShot Studio\Scripts\`.
@@ -149,9 +149,13 @@ The tests use a fake `lux` module. KeyShot is not necessary.
 cd tests
 py -3.13 test_pont.py
 py -3.13 test_serveur_mcp.py
+py -3.13 test_cli.py
+py -3.13 test_publication.py
+py -3.13 test_plugin.py
+py -3.13 test_dev_version.py
 ```
 
-`test_pont.py` has 85 tests for the bridge. `test_serveur_mcp.py` has 9 end-to-end tests. The `essai_*.py` files need an open KeyShot.
+`test_pont.py` has 87 tests for the bridge. `test_serveur_mcp.py` has 9 end-to-end tests. `test_cli.py` tests the command `keyshot-mcp`. `test_publication.py` and `test_plugin.py` check the PyPI, MCP registry and plugin files, and that this README follows the code. `test_dev_version.py` tests the TestPyPI version tool. The `essai_*.py` files need an open KeyShot.
 
 `test_serveur_mcp.py` starts the server with the Python that runs the test. If the packages in `libs` are for a different Python version, set `KEYSHOT_MCP_PYTHON` to the applicable `python.exe`.
 

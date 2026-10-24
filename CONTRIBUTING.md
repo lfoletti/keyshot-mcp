@@ -7,9 +7,9 @@ You can write issues and pull requests in English or in French.
 ## Set up
 
 1. Fork the repository, then clone your fork.
-2. Install `mcp` 1.28.1 in the `libs` folder:
+2. Install `mcp` 1.30.0 in the `libs` folder:
    ```
-   py -3.12 -m pip install --target libs mcp==1.28.1
+   py -3.12 -m pip install --target libs mcp==1.30.0
    ```
 3. Make sure the imports are correct:
    ```
