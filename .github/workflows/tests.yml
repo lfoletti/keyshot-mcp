@@ -40,6 +40,10 @@ jobs:
         working-directory: tests
         run: python test_cli.py
 
+      - name: Publication files
+        working-directory: tests
+        run: python test_publication.py
+
   package:
     # The PyPI package: build it, install it in a clean environment, run the command.
     runs-on: windows-latest

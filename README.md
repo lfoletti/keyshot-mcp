@@ -1,5 +1,7 @@
 # keyshot-mcp
 
+<!-- mcp-name: io.github.lfoletti/keyshot-mcp -->
+
 Control an open KeyShot Studio 2026 window from Claude Code with the Model Context Protocol (MCP).
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
