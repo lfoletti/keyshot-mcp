@@ -7,6 +7,8 @@ The bridge, the stop script and the MCP server have the same version.
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-10-24
+
 ### Added
 
 - README: status "prototype" (badge, note at the top, section *Status*).
@@ -83,7 +85,8 @@ First public version.
 - The tools edit a material graph only on copies that the bridge made.
 - `save_scene` keeps a copy of the old `.bip` file.
 
-[Unreleased]: https://github.com/lfoletti/keyshot-mcp/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/lfoletti/keyshot-mcp/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/lfoletti/keyshot-mcp/releases/tag/v1.1.0
 [1.0.0]: https://github.com/lfoletti/keyshot-mcp/releases/tag/v1.0.0
 [0.3.1]: https://github.com/lfoletti/keyshot-mcp/commit/bb801b8
 [0.3.0]: https://github.com/lfoletti/keyshot-mcp/commit/2a654b0

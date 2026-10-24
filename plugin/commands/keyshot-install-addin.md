@@ -6,7 +6,7 @@ allowed-tools: Bash(uvx keyshot-mcp==*)
 Run this command, then give the result to the user:
 
 ```
-uvx keyshot-mcp==1.0.0 install-addin $ARGUMENTS
+uvx keyshot-mcp==1.1.0 install-addin $ARGUMENTS
 ```
 
 - If the command says "Restart KeyShot", tell the user to restart KeyShot Studio, then to run MCP start (Window > Scripting Console > Scripts).
