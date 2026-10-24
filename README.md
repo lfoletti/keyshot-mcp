@@ -4,6 +4,8 @@ Control an open KeyShot Studio 2026 window from Claude Code with the Model Conte
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Status: prototype](https://img.shields.io/badge/status-prototype-orange.svg)](#status)
+[![Tests](https://github.com/lfoletti/keyshot-mcp/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/lfoletti/keyshot-mcp/actions/workflows/tests.yml)
+[![Release](https://img.shields.io/github/v/release/lfoletti/keyshot-mcp)](https://github.com/lfoletti/keyshot-mcp/releases)
 
 > **Status: prototype.** The tools work and have tests, but the project depends on the scripting API of KeyShot, which can change. Tell us what you use and what fails: open an issue or a discussion.
 
@@ -29,6 +31,8 @@ The bridge runs inside KeyShot. The server runs in Claude Code. They speak only 
 | Claude Code | any recent version |
 
 ## Install
+
+Each release has `keyshot-mcp-<version>-windows.zip`, with `libs/` already filled. Unzip it, then go to step 3. Without the zip, start at step 1.
 
 1. Clone the repository:
    ```
@@ -126,7 +130,7 @@ py -3.13 test_serveur_mcp.py
 
 ## Contribute
 
-Read [CONTRIBUTING.md](CONTRIBUTING.md).
+Read [CONTRIBUTING.md](CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
 
 ## Status
 
