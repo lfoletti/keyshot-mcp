@@ -153,11 +153,12 @@ jobs:
           persist-credentials: false
 
       - name: Install mcp-publisher v1.8.4
+        # The SHA-256 is written here, not read from the release: a file
+        # from the same place as the binary does not prove where it comes from.
         run: |
           base=https://github.com/modelcontextprotocol/registry/releases/download/v1.8.4
           curl -fsSLO "$base/mcp-publisher_linux_amd64.tar.gz"
-          curl -fsSLO "$base/registry_1.8.4_checksums.txt"
-          grep ' mcp-publisher_linux_amd64.tar.gz$' registry_1.8.4_checksums.txt | sha256sum -c
+          echo "5dc2fd415369c73551259f31cd33e2aacc9e0d1021e7f08fef1492d93b781628  mcp-publisher_linux_amd64.tar.gz" | sha256sum -c
           tar xzf mcp-publisher_linux_amd64.tar.gz mcp-publisher
 
       - name: Publish server.json
