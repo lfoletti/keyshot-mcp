@@ -15,6 +15,8 @@ You can write issues and pull requests in English or in French.
    ```
    py -3.12 -I -S run.py --check
    ```
+4. Install the hook: `git config core.hooksPath tools/hooks`.
+5. Write your private terms in `.git/info/private-terms`, one extended regular expression per line. The hook refuses a push without this file. Git does not track it.
 
 ## Tests
 

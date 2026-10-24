@@ -1,0 +1,61 @@
+#!/bin/sh
+# pre-push hook of keyshot-mcp. Install once with
+#   git config core.hooksPath tools/hooks
+# It refuses a push when:
+#   1. the private terms file is missing (the check fails closed);
+#   2. an added line or a commit message of the pushed commits matches a
+#      private term (one extended regular expression per line, case ignored,
+#      in .git/info/private-terms, which git does not track);
+#   3. the pushed commits touch addin/, server/, tests/ or run.py, and
+#      tests/test_pont.py fails (or tests/test_serveur_mcp.py, when libs/mcp exists).
+# Never bypass it with --no-verify.
+
+zero=0000000000000000000000000000000000000000
+root=$(git rev-parse --show-toplevel) || exit 1
+terms="$(git rev-parse --git-common-dir)/info/private-terms"
+
+if [ ! -s "$terms" ]; then
+	echo "pre-push: $terms is missing or empty; write the private terms first, one per line" >&2
+	exit 1
+fi
+
+status=0
+touched=""
+while read -r local_ref local_sha remote_ref remote_sha; do
+	[ "$local_sha" = "$zero" ] && continue # a deleted branch pushes no content
+	if [ "$remote_sha" = "$zero" ]; then
+		range="$local_sha --not --remotes"
+	else
+		range="$remote_sha..$local_sha"
+	fi
+	# shellcheck disable=SC2086
+	hits=$({
+		git log --format='%B' $range
+		git log -p --format= $range | grep '^+' | grep -v '^+++ '
+	} | grep -i -E -f "$terms")
+	if [ -n "$hits" ]; then
+		echo "pre-push: $local_ref adds text that matches a private term:" >&2
+		echo "$hits" | cut -c1-160 >&2
+		status=1
+	fi
+	# shellcheck disable=SC2086
+	touched="$touched $(git log --name-only --format= $range)"
+done
+[ $status -ne 0 ] && exit $status
+
+if echo "$touched" | grep -q -E '(^| )(addin/|server/|tests/|run\.py)'; then
+	py=$(command -v python3.12 || command -v py || command -v python3)
+	(cd "$root/tests" && "$py" test_pont.py) || {
+		echo "pre-push: tests/test_pont.py failed" >&2
+		exit 1
+	}
+	if [ -d "$root/libs/mcp" ]; then
+		(cd "$root/tests" && "$py" test_serveur_mcp.py) || {
+			echo "pre-push: tests/test_serveur_mcp.py failed" >&2
+			exit 1
+		}
+	else
+		echo "pre-push: libs/mcp is missing, so the server tests run only in the CI" >&2
+	fi
+fi
+exit 0
