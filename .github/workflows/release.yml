@@ -54,7 +54,13 @@ jobs:
           Copy-Item run.py, README.md, LICENSE, CHANGELOG.md "dist/$name/"
           Get-ChildItem -Recurse -Directory -Filter __pycache__ "dist/$name" | Remove-Item -Recurse -Force
           Compress-Archive -Path "dist/$name" -DestinationPath "dist/$name.zip"
-          (Get-FileHash "dist/$name.zip" -Algorithm SHA256).Hash.ToLower() + "  $name.zip" | Out-File -Encoding ascii "dist/$name.zip.sha256"
+          # One line with a LF end, so that shasum -c and sha256sum -c read the file name.
+          $hash = (Get-FileHash "dist/$name.zip" -Algorithm SHA256).Hash.ToLower()
+          [IO.File]::WriteAllText("$PWD/dist/$name.zip.sha256", "$hash  $name.zip`n")
+
+      - name: Check the checksum file
+        shell: bash
+        run: cd dist && sha256sum -c *.zip.sha256
 
       - name: Attach to the release
         if: github.event_name != 'pull_request'
