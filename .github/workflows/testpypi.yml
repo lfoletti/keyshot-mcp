@@ -108,8 +108,12 @@ jobs:
           test "$(venv/Scripts/keyshot-mcp --version)" = "keyshot-mcp $VERSION"
           mkdir scripts
           venv/Scripts/keyshot-mcp install-addin --dir scripts
-          cmp "scripts/MCP start.py" "addin/Scripts/MCP start.py"
-          cmp "scripts/MCP stop.py" "addin/Scripts/MCP stop.py"
+          # The wheel holds the scripts as Git stores them (LF). On Windows,
+          # the checkout writes CRLF, so the comparison reads the Git blobs.
+          for nom in "MCP start.py" "MCP stop.py"; do
+            git show "HEAD:addin/Scripts/$nom" > expected.py
+            cmp "scripts/$nom" expected.py
+          done
           printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"testpypi","version":"0"}}}' \
             | timeout 60 venv/Scripts/keyshot-mcp > reply.txt || true
           grep -F '"serverInfo"' reply.txt
