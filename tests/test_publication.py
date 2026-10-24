@@ -65,5 +65,35 @@ class Registre(unittest.TestCase):
         self.assertIn(f"](https://pypi.org/project/{nom_du_paquet()}/)", texte("README.md"))
 
 
+class Documentation(unittest.TestCase):
+    """Le README et CONTRIBUTING suivent le code : version de mcp, fichiers et nombres de tests."""
+
+    FICHIERS_MCP = ["README.md", "CONTRIBUTING.md", "run.py",
+                    ".github/workflows/tests.yml", ".github/workflows/release.yml"]
+
+    def test_une_seule_version_de_mcp(self):
+        # Dependabot change pyproject.toml ; le zip, la CI et la doc doivent suivre.
+        attendue, = re.findall(r'"mcp==([^"]+)"', texte("pyproject.toml"))
+        for chemin in self.FICHIERS_MCP:
+            contenu = texte(*chemin.split("/"))
+            versions = re.findall(r"\bmcp`?(?:==| )(\d+\.\d+\.\d+)", contenu)
+            versions += re.findall(r"\|\s*`mcp`\s*\|\s*(\d+\.\d+\.\d+)", contenu)
+            self.assertTrue(versions, chemin)
+            self.assertEqual(set(versions), {attendue}, chemin)
+
+    def test_la_doc_cite_tous_les_fichiers_de_tests(self):
+        fichiers = sorted(f for f in os.listdir(ICI) if re.fullmatch(r"test_\w+\.py", f))
+        for chemin in ("README.md", "CONTRIBUTING.md"):
+            cites = re.findall(r"py -3\.\d+ (test_\w+\.py)", texte(chemin))
+            self.assertEqual(sorted(cites), fichiers, chemin)
+
+    def test_les_nombres_de_tests_du_readme(self):
+        annonces = re.findall(r"`(test_\w+\.py)` has (\d+)", texte("README.md"))
+        self.assertTrue(annonces)
+        for fichier, nombre in annonces:
+            reel = len(re.findall(r"^\s+def test_", texte("tests", fichier), re.M))
+            self.assertEqual(int(nombre), reel, fichier)
+
+
 if __name__ == "__main__":
     unittest.main()
