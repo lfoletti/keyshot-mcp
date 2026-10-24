@@ -28,6 +28,7 @@ py -3.13 test_pont.py
 py -3.13 test_serveur_mcp.py
 py -3.13 test_cli.py
 py -3.13 test_publication.py
+py -3.13 test_plugin.py
 ```
 
 All the tests must pass.
@@ -91,6 +92,7 @@ When you change the version, change it in these places, with the same value:
 - `__version__` in `server/keyshotmcp/__init__.py`.
 - `VERSION_PONT_ATTENDUE` in `server/keyshotmcp/server.py`.
 - `version` and `packages[0].version` in `server.json`. `tests/test_publication.py` checks them.
+- `version` in `plugin/.claude-plugin/plugin.json`, the `uvx` argument in `plugin/.mcp.json` and in `plugin/commands/keyshot-install-addin.md`. `tests/test_plugin.py` checks them.
 
 Then move the `[Unreleased]` section of `CHANGELOG.md` to a new section with the version and the date. After the merge, the maintainer adds the tag `vX.Y.Z` and a GitHub release.
 

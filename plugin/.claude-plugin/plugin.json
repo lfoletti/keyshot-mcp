@@ -1,0 +1,11 @@
+{
+  "name": "keyshot",
+  "description": "The keyshot-mcp server for KeyShot Studio on Windows (scene, cameras, materials, renders), started with uvx, and a command that installs the bridge scripts into KeyShot.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Lauro Foletti",
+    "email": "lauro.foletti@gmail.com"
+  },
+  "homepage": "https://github.com/lfoletti/keyshot-mcp",
+  "license": "MIT"
+}

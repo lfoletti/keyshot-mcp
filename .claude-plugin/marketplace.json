@@ -1,0 +1,17 @@
+{
+  "name": "keyshot-mcp",
+  "metadata": {
+    "description": "The KeyShot Studio MCP server as a Claude Code plugin."
+  },
+  "owner": {
+    "name": "Lauro Foletti",
+    "url": "https://github.com/lfoletti/keyshot-mcp"
+  },
+  "plugins": [
+    {
+      "name": "keyshot",
+      "source": "./plugin",
+      "description": "Control KeyShot Studio from Claude Code: scene, cameras, materials from a CMF sheet, and renders."
+    }
+  ]
+}
