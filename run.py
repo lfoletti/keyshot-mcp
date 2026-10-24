@@ -4,8 +4,8 @@ Lancé avec `-I -S` : les copies de ce dossier (server/ et libs/) passent avant 
 autre paquet, et le site-packages du Python n'est pas chargé.
 `python -I -S run.py --check` vérifie les imports sans démarrer le serveur.
 
-libs/ contient mcp 1.28.1 et ses dépendances :
-`pip install --target libs mcp==1.28.1`.
+libs/ contient mcp 1.30.0 et ses dépendances :
+`pip install --target libs mcp==1.30.0`.
 """
 import os
 import sys

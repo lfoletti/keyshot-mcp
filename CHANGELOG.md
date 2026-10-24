@@ -10,6 +10,8 @@ The bridge, the stop script and the MCP server have the same version.
 ### Changed
 
 - README: all links are absolute, so they work on the PyPI page too (the demo GIF, the licence, CONTRIBUTING, the code of conduct). A PyPI badge. `tests/test_publication.py` refuses a relative link in the README.
+- `mcp` 1.30.0 everywhere: README, CONTRIBUTING, `run.py`, the workflows *Tests* and *Release* (the release zip). Before, only `pyproject.toml` had it.
+- README, section *Tests*: all the test files, and 87 bridge tests. `tests/test_publication.py` checks that the README, CONTRIBUTING, `run.py` and the workflows have the `mcp` version of `pyproject.toml`, that the README and CONTRIBUTING list all the test files, and the numbers of tests in the README.
 
 ## [1.1.0] - 2026-10-24
 

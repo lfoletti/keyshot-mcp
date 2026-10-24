@@ -41,7 +41,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install mcp in libs
-        run: python -m pip install --target libs mcp==1.28.1
+        run: python -m pip install --target libs mcp==1.30.0
 
       - name: Check imports
         run: python -I -S run.py --check
