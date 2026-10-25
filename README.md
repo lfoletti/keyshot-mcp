@@ -2,6 +2,8 @@
 
 <!-- mcp-name: io.github.lfoletti/keyshot-mcp -->
 
+English | [简体中文](https://github.com/lfoletti/keyshot-mcp/blob/main/README.zh-CN.md) | [日本語](https://github.com/lfoletti/keyshot-mcp/blob/main/README.ja.md) | [한국어](https://github.com/lfoletti/keyshot-mcp/blob/main/README.ko.md) | [Deutsch](https://github.com/lfoletti/keyshot-mcp/blob/main/README.de.md)
+
 Control an open KeyShot Studio 2026 window from Claude Code with the Model Context Protocol (MCP).
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/lfoletti/keyshot-mcp/blob/main/LICENSE)

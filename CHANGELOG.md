@@ -7,6 +7,10 @@ The bridge, the stop script and the MCP server have the same version.
 
 ## [Unreleased]
 
+### Added
+
+- README in Chinese (`README.zh-CN.md`), Japanese (`README.ja.md`), Korean (`README.ko.md`) and German (`README.de.md`). Each README links to all the others. `tests/test_publication.py` checks in each translation the `mcp` version, the test files, the numbers of tests and the links between the READMEs.
+
 ## [1.1.1] - 2026-10-24
 
 ### Changed
