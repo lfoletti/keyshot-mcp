@@ -65,10 +65,20 @@ class Registre(unittest.TestCase):
         self.assertIn(f"](https://pypi.org/project/{nom_du_paquet()}/)", texte("README.md"))
 
 
+# README traduits : fichier → forme de la phrase qui annonce un nombre de tests.
+TRADUCTIONS = {
+    "README.zh-CN.md": r"`(test_\w+\.py)` 有 (\d+) 个",
+    "README.ja.md": r"`(test_\w+\.py)` には (\d+) 件",
+    "README.ko.md": r"`(test_\w+\.py)`에는 (\d+)개",
+    "README.de.md": r"`(test_\w+\.py)` enthält (\d+) Tests",
+}
+README = ["README.md", *TRADUCTIONS]
+
+
 class Documentation(unittest.TestCase):
     """Le README et CONTRIBUTING suivent le code : version de mcp, fichiers et nombres de tests."""
 
-    FICHIERS_MCP = ["README.md", "CONTRIBUTING.md", "run.py",
+    FICHIERS_MCP = [*README, "CONTRIBUTING.md", "run.py",
                     ".github/workflows/tests.yml", ".github/workflows/release.yml"]
 
     def test_une_seule_version_de_mcp(self):
@@ -83,7 +93,7 @@ class Documentation(unittest.TestCase):
 
     def test_la_doc_cite_tous_les_fichiers_de_tests(self):
         fichiers = sorted(f for f in os.listdir(ICI) if re.fullmatch(r"test_\w+\.py", f))
-        for chemin in ("README.md", "CONTRIBUTING.md"):
+        for chemin in (*README, "CONTRIBUTING.md"):
             cites = re.findall(r"py -3\.\d+ (test_\w+\.py)", texte(chemin))
             self.assertEqual(sorted(cites), fichiers, chemin)
 
@@ -93,6 +103,21 @@ class Documentation(unittest.TestCase):
         for fichier, nombre in annonces:
             reel = len(re.findall(r"^\s+def test_", texte("tests", fichier), re.M))
             self.assertEqual(int(nombre), reel, fichier)
+
+    def test_les_nombres_de_tests_des_readme_traduits(self):
+        for chemin, forme in TRADUCTIONS.items():
+            annonces = re.findall(forme, texte(chemin))
+            self.assertTrue(annonces, chemin)
+            for fichier, nombre in annonces:
+                reel = len(re.findall(r"^\s+def test_", texte("tests", fichier), re.M))
+                self.assertEqual(int(nombre), reel, f"{chemin} : {fichier}")
+
+    def test_chaque_readme_renvoie_aux_autres(self):
+        base = "https://github.com/lfoletti/keyshot-mcp/blob/main/"
+        for chemin in README:
+            for autre in README:
+                if autre != chemin:
+                    self.assertIn(f"]({base}{autre})", texte(chemin), f"{chemin} → {autre}")
 
 
 if __name__ == "__main__":
